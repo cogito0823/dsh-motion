@@ -39,5 +39,13 @@
     "smoke": "node scripts/smoke.mjs",
     "check:meta": "node scripts/check-meta.mjs",
     "prepack": "npm run check && npm run smoke"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cogito0823/dsh-motion.git"
+  },
+  "homepage": "https://github.com/cogito0823/dsh-motion#readme",
+  "bugs": {
+    "url": "https://github.com/cogito0823/dsh-motion/issues"
   }
 }
