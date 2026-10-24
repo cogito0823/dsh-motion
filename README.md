@@ -1,5 +1,8 @@
 # dsh-motion
 
+> **Unofficial community plugin.** Not affiliated with or endorsed by DeepSeek.
+> The name is descriptive (`motion` = animation); if the upstream project needs it, this package will be renamed.
+
 **代码生成的数学 / 科普动画**，给 [DeepSeek Harness](https://github.com/deepseek-ai) 用的插件。
 画面由代码逐帧生成，不经过任何文生视频（text-to-video）模型。
 
