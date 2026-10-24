@@ -1,0 +1,43 @@
+{
+  "name": "dsh-motion",
+  "version": "0.1.0",
+  "description": "Code-generated math & science animations for DeepSeek Harness: render Manim clips, probe frames, verify formulas.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "skills",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "NOTICE.md"
+  ],
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "animation",
+    "manim",
+    "science",
+    "video",
+    "code-animation"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "check": "node --check lib/index.js && node --check lib/ops.js && node --check lib/env.js && node --check lib/doctor.js",
+    "smoke": "node scripts/smoke.mjs",
+    "check:meta": "node scripts/check-meta.mjs",
+    "prepack": "npm run check && npm run smoke"
+  }
+}
