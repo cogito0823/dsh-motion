@@ -141,6 +141,15 @@ npx hyperframes@0.8.193 render <project> -o out.mp4 --quality delivery
 | `ffprobe` 缺失 | 只装了 ffmpeg | 装完整 FFmpeg，插件会退回 `ffmpeg -i` 解析 |
 | 抽帧全黑 | 片头/片尾空镜 | 用 `tpad=stop_mode=clone` 补帧，或剪掉 |
 
+## 本地开发（维护者）
+
+桌面 App **独占** `desktop` profile，CLI 不能管理它（`dsh plugin --profile desktop` 会直接报错）。
+把插件切到当前 checkout 的完整步骤、验证命令和禁忌清单记在
+[MAINTAINING.md](https://github.com/cogito0823/dsh-motion/blob/main/MAINTAINING.md)。
+
+一句话版本：插件管理器里**卸载** `dsh-motion` → **安装本地目录** `/path/to/dsh-motion` → `⌘⇧R` 重启；
+之后 `motion_doctor` 第一行的「插件来源」会直接说明当前跑的是本地 checkout 还是 npm 安装。
+
 ## 发版（维护者）
 
 首次发布会把包名与 2FA 绑好；之后走 GitHub Actions 的 **Trusted Publishing**（OIDC），不需要 token、不需要 OTP，自动附带 **provenance 签名**。
