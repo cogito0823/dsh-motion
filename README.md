@@ -1,5 +1,7 @@
 # dsh-motion
 
+![npm](https://img.shields.io/npm/v/dsh-motion)
+
 > **Unofficial community plugin.** Not affiliated with or endorsed by DeepSeek.
 > The name is descriptive (`motion` = animation); if the upstream project needs it, this package will be renamed.
 
