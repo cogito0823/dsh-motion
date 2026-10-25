@@ -14,7 +14,7 @@ updated: 2026-10-25
 - Tokens：[styles/dark-editorial/tokens.json](styles/dark-editorial/tokens.json)
 - Python 工具：[styles/dark-editorial/theme.py](styles/dark-editorial/theme.py)
 - 参考帧：[styles/dark-editorial/preview.jpg](styles/dark-editorial/preview.jpg)
-- 参考成片：[episodes/euler/euler.mp4](episodes/euler/euler.mp4)
+- 参考成片：`episodes/euler/euler.mp4`（本地渲染产物，不随仓库分发）
 
 ## 使用规则
 

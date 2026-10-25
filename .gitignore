@@ -12,5 +12,8 @@ check-*.png
 check.storyboard*.png
 *-contact.png
 
+# 分集成片：体积大、可本地重渲，不随仓库分发
+episodes/**/*.mp4
+
 # 分集音频（由 make_audio.py 生成）
 *.wav

@@ -28,7 +28,7 @@
 - Python 工具：[`styles/dark-editorial/theme.py`](styles/dark-editorial/theme.py)
 - 参考帧：[`styles/dark-editorial/preview.jpg`](styles/dark-editorial/preview.jpg)
 
-完整参考成片在仓库的 `episodes/euler/euler.mp4`。
+参考片源码在 `episodes/euler/`（欧拉公式）和 `episodes/derivative/`（导数：割线如何变成切线），沿用同一套版式。成片 mp4 体积大，**不随仓库分发**，按各集 `README.md` 的「重建」命令本地渲染。
 
 新片在 `episodes/<slug>/DESIGN.md` 头部写 `style: dark-editorial@1.0.0`；需要换语言时在分集文件里覆盖。
 

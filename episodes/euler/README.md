@@ -5,8 +5,8 @@
 
 ## 成品
 
-- `euler.mp4` — 10.000 s，1920×1080，60 fps，H.264 / AAC，约 3.7 MB
-- `poster.png` — 9.6 s 处的封面帧
+- `euler.mp4` — 10.000 s，1920×1080，60 fps，H.264 / AAC，约 3.7 MB（体积大，不随仓库分发）
+- `poster.jpg` — 9.6 s 处的封面帧
 - 无旁白、无字幕；原创环境音，Integrated ≈ −16 LUFS，True Peak ≈ −6.7 dBFS
 
 ## 重建
