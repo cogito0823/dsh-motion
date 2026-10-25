@@ -26,6 +26,24 @@ node scripts/plan-questions.mjs "<brief>" --json
 选项是**推出来的**，不是固定清单：画幅看平台线索，交付看有无旁白，风格看 registry 命中，受众看题材与平台。
 用户也可以直接在 `Other` 里写别的。
 
+## 0.5 环境预检：跑一次，别再拆
+
+开工前只调用**一次** `motion_doctor`。它一口气返回：
+
+- 运行时：Node / FFmpeg / venv / manimgx / sympy / Chrome / HyperFrames；
+- **字体**：PingFang SC、Helvetica Neue 的构造结果；
+- **公式**：`\lim_{}\frac{}{}`、微分记号、积分三条样本的 Typst 转换；
+- **API 签名**：`probe.api` 里的 MathTex / Text / DecimalNumber / ValueTracker / Axes。
+
+规则：
+
+- `ready.math` / `ready.delivery` / `ready.fonts` / `ready.formulas` 全为 true 才开工；
+- **不要**把字体、公式、模块版本拆成多条 bash 去查：每条都是一次模型往返（5–15 s），而这次预检本身约 0.5 s；
+- 结果按文件指纹缓存 12 h。`cached.hit: true` 表示环境没变，直接信；升级 venv / manimgx 会自动失效，要手动重测用 `MOTION_PREFLIGHT=force`；
+- 要库 API 先看 `probe.api`，**不要读 site-packages 源码**；签名不够时用一条命令补：`python -c "import inspect, manimgx; print(inspect.signature(manimgx.DecimalNumber.__init__))"`；
+- 构造通过 ≠ 画面没问题：排版仍以第一帧（`motion_frames`）为准；
+- 所以**不要再单独写 probe 场景做冒烟渲染**：项目的第一帧就是冒烟，一次就够。
+
 ## 1. 判题材
 
 | 题材 | 观众记住 | 判据 |
@@ -101,7 +119,7 @@ node scripts/approvals.mjs check <project>   # 未全部 approved 时退出 1
 `motion_frames` 内部是 `manimgx inspect`，只画请求的时刻并做版式检查；
 `motion_probe` 是给已有 mp4 做体检的，不要用它替代看帧。
 
-## 6. 五条硬规则
+## 6. 硬规则（逐条对照）
 
 1. **没有明确开工指令，不执行**：没听到“可以开始”就不写完整场景、不出全片；
 2. **没有 DESIGN.md 或参考语法，不开工**——否则每次都是同一个默认 look；
@@ -110,4 +128,5 @@ node scripts/approvals.mjs check <project>   # 未全部 approved 时退出 1
 5. **公式先过 `formula_check`**，再进画面；
 6. **首帧预算 ≤60s**：先最小场景 + 构图 sheet，60s 看不到第一帧就停；
 7. **只做局部 edit**：改动 <50% 不重写整个文件；
-8. **图片/上下文预算**：每次迭代 1 张 sheet（约 960px），上下文 ≤100k。
+8. **图片/上下文预算**：每次迭代 1 张 sheet（约 960px），上下文 ≤100k；
+9. **预检只跑一次**：`motion_doctor` 已含字体/公式/API 签名并缓存 12 h，不拆成多条 bash，也不读库源码。

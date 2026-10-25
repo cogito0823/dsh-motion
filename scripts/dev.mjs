@@ -5,7 +5,7 @@
  *   node scripts/dev.mjs frames <scene.py> [t1,t2,...]
  *   node scripts/dev.mjs render <scene.py> [--fps 30] [--out path]
  *   node scripts/dev.mjs probe <video.mp4>
- *   node scripts/dev.mjs doctor
+ *   node scripts/dev.mjs doctor [--force]
  */
 import { mkdirSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
@@ -62,7 +62,10 @@ if (cmd === 'frames') {
   const started = Date.now()
   console.log(JSON.stringify({ ...(await probeVideo({}, { video: file })), elapsed: elapsed(started) }, null, 2))
 } else if (cmd === 'doctor') {
-  console.log(JSON.stringify(await doctor({}), null, 2))
+  if (rest.includes('--force')) process.env.MOTION_PREFLIGHT = 'force'
+  const started = Date.now()
+  const report = await doctor({})
+  console.log(JSON.stringify({ ...report, elapsed: elapsed(started) }, null, 2))
 } else {
   fail(`未知命令: ${cmd}`)
 }

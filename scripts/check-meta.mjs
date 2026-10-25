@@ -12,7 +12,7 @@ if (pkg.private) problems.push('package.json 里 private 仍为 true')
 if (!pkg.license) problems.push('缺少 license')
 if (!pkg.engines?.node) problems.push('缺少 engines.node')
 
-for (const file of ['lib/index.js', 'lib/ops.js', 'lib/env.js', 'lib/doctor.js']) {
+for (const file of ['lib/index.js', 'lib/ops.js', 'lib/env.js', 'lib/doctor.js', 'lib/preflight.js', 'lib/cache.js']) {
   const text = readFileSync(join(process.cwd(), file), 'utf8')
   if (/\/Users\/[^\s'"]+/.test(text)) problems.push(`${file} 含绝对路径 /Users/…`)
 }

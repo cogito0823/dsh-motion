@@ -14,9 +14,14 @@ description: 代码动画的自检清单：环境、公式、画面、音频、�
 
 详见 [performance-budget.md](../../docs/performance-budget.md)。
 
-## 1. 环境
+## 1. 环境（一次调用）
 
-先跑 `motion_doctor`，`ready.math` 与 `ready.delivery` 都为 true 再继续。
+开工前跑**一次** `motion_doctor`：运行时 + 中文字体 + 公式转换 + API 签名一起返回。
+
+- `ready.math` / `ready.delivery` / `ready.fonts` / `ready.formulas` 全 true 再继续；
+- `cached.hit: true` 表示环境未变（指纹含 venv / manimgx mtime），不必重跑；
+- 不要为字体、公式、模块版本各跑一条 bash，也不要读 site-packages 查 API：签名在 `probe.api`；
+- 换 venv 或升级 manimgx 后，用 `MOTION_PREFLIGHT=force motion_doctor` 强制重测。
 
 ## 2. 公式（仅数学题材）
 

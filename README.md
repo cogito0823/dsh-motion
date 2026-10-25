@@ -13,7 +13,7 @@
 | 工具 | 作用 |
 |---|---|
 | `motion_frames` | **极简模式（默认）**：直接从场景出帧，不生成视频、不用 HF；几秒拿到 storyboard PNG 与 layout 问题 |
-| `motion_doctor` | 环境自检（Node / FFmpeg / Python venv / manimgx / sympy / Chrome / HyperFrames） |
+| `motion_doctor` | **环境预检（一次调用）**：运行时 + 中文字体 + 公式转换 + 常用 API 签名；按指纹缓存 12 h |
 | `motion_render` | 渲染 Manim / manimgx 场景；未通过 `APPROVALS.json` 确认门的项目会拒绝渲染 |
 | `motion_probe` | 成片抽帧拼 contact sheet，报告全黑 / 过曝的空镜 |
 | `formula_check` | 用 SymPy 判断两个表达式是否恒等 |
@@ -99,11 +99,13 @@ npm install -g dsh-motion
 # 或在 DSH 插件管理器里安装 dsh-motion
 ```
 
-安装后重启 DeepSeek Harness，然后先跑一次自检：
+安装后重启 DeepSeek Harness，然后先跑一次预检：
 
 ```
 motion_doctor
 ```
+
+它把运行时、中文字体、公式转换和常用 API 签名一次带回（按机器指纹缓存 12 小时，重复调用几乎不耗时）。
 
 ## 依赖
 

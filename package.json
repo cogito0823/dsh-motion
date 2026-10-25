@@ -38,8 +38,8 @@
     }
   },
   "scripts": {
-    "check": "node --check lib/index.js && node --check lib/ops.js && node --check lib/env.js && node --check lib/doctor.js",
-    "test": "node scripts/test-ops.mjs && node scripts/test-route.mjs && node scripts/test-plan.mjs && node scripts/test-approvals.mjs",
+    "check": "node --check lib/index.js && node --check lib/ops.js && node --check lib/env.js && node --check lib/doctor.js && node --check lib/preflight.js && node --check lib/cache.js",
+    "test": "node scripts/test-ops.mjs && node scripts/test-route.mjs && node scripts/test-plan.mjs && node scripts/test-approvals.mjs && node scripts/test-preflight.mjs",
     "smoke": "node scripts/smoke.mjs",
     "dev": "node scripts/dev.mjs",
     "route": "node scripts/route-style.mjs",

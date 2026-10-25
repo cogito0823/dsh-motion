@@ -45,6 +45,7 @@
 
 已完成：
 
+- [x] 环境预检合并为一次 `motion_doctor`：字体 + 公式转换 + API 签名进同一个 Python 进程，整份报告按指纹缓存 12 h（冷 0.5 s / 热 4 ms）。旧流程是 4–5 条独立 bash，光模型往返就 40–60 s；
 - [x] 格式契约：`apply_config()` 只设背景色，不再覆盖分辨率/帧率；`motion_render` 的 `width/height/fps` 与 CLI 的 `-r/--fps` 生效；
 - [x] CFR：post 强制 CFR；所有成片按 `nb_read_frames` 对比期望帧数，少帧时用 `tpad + CFR` 补齐并复验；
 - [x] storyboard 顶部 caption 条加提示，避免误判“裁切”。
@@ -67,7 +68,8 @@
 
 ```text
 first_frame_s, total_s, model_s, tool_s, render_s,
-output_tokens, context_peak, image_reads, full_rewrites, probes, renders
+output_tokens, context_peak, image_reads, full_rewrites, probes, renders,
+preflight_calls（目标 1）
 ```
 
 复测时用同一台机器、同一支 30 s 片，先对比“首帧”和“输出 tokens”，再看总时长。
