@@ -44,6 +44,7 @@ npx hyperframes check
 
 - 返回的 storyboard PNG 逐张看过：无叠字、无出画、字号可读；
 - sheet 每格顶部是 caption 条，不是画面；不要把 caption 当成"上沿被裁"；
+- 中文文本没有用字符级 `Transform` / `ReplacementTransform`；换词用 FadeOut + FadeIn；
 - `layoutProblems` 每一条都要处理或明确接受；
 - 已经生成了 mp4 时，才用 `motion_probe` 抽 contact sheet + 查 `blankFrames`；
 - 用了 HyperFrames 的项目，用 `npx hyperframes snapshot <project> --at 2.9,10.4` 抽帧，不要先 render 再截图。

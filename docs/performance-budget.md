@@ -41,14 +41,25 @@
 - 不把旧代码、旧图、已经确认过的长文重复贴回上下文；
 - 目标峰值 ≤100k；接近 100k 时先摘要再继续。
 
-## P1（工具，后做）
+## P1（工具）
 
-- `motion_frames` 按场景 fps 取帧，超范围给明确错误；
-- 渲染/post 强制 CFR，校验 `duration == frames / fps`；
-- storyboard 顶部 caption 条加提示（不属于画面，避免误判裁切）；
-- 中文文本禁用字符级 `Transform`，改用 Fade/Write；
-- `motion_probe` 只在最终成片跑一次；
-- `--draft` 低分辨率/低帧率、分段渲染、`manimgx preview` 包装、animatic。
+已完成：
+
+- [x] `motion_frames` 按场景 fps 取帧：各风格 `theme.py` 在模块层设置 `m.config.frame_rate`；
+- [x] post 强制 CFR，并校验成片时长（`tpad + CFR` 修正后复验）；
+- [x] storyboard 顶部 caption 条加提示，避免误判“裁切”。
+
+明确不做：
+
+- CJK 字符级 `ReplacementTransform` / `Transform` 的字形变形。manimgx 核心按点插值，汉字轮廓点数与顺序不一致，修起来是字形级工程；本仓库按“不支持”处理。
+  - 中文标题/标签：`Write`、`FadeIn/Out`、`Indicate`、改颜色；
+  - 换词：`FadeOut(old)` + `FadeIn(new)`，或按词/行 stagger；
+  - 公式：`TransformMatchingTex`；中文注释放在 `Text`，不混进 MathTex。
+
+待做：
+
+- [ ] `motion_probe` 只在最终成片跑一次；
+- [ ] `--draft` 低分辨率/低帧率、分段渲染、`manimgx preview` 包装、animatic。
 
 ## 怎么量
 
