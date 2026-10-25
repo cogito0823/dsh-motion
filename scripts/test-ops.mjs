@@ -4,6 +4,7 @@
  * 钉住 lib/ 里那些"模型看不到的不变量"：
  *   - summarizeRender 能否从渲染器输出里稳定抽出时长/分辨率/布局问题；
  *   - normalizePost 是否把脏参数挡在 ffmpeg 之前；
+ *   - probe 的网格、亮度解析与空镜判据是否符合 limited range；
  *   - pluginSource 报的是不是当前这份代码。
  *
  * 用法：node scripts/test-ops.mjs
@@ -13,7 +14,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { pluginSource } from '../lib/doctor.js'
-import { normalizePost, summarizeRender } from '../lib/ops.js'
+import { isBlankFrame, normalizePost, parseSignalStats, summarizeRender, tileGrid } from '../lib/ops.js'
 
 let failed = 0
 
@@ -104,6 +105,58 @@ test('normalizePost 不把负数当"开启"', () => {
 test('normalizePost 只认已知调色预设', () => {
   assert.equal(normalizePost({ grade: 'warm' }).enabled, true)
   assert.equal(normalizePost({ grade: 42 }).enabled, false)
+})
+
+// —— tileGrid：网格要装得下请求的帧数 ——
+test('tileGrid 按帧数选网格', () => {
+  assert.equal(tileGrid(2), '2x1')
+  assert.equal(tileGrid(4), '2x2')
+  assert.equal(tileGrid(6), '3x2')
+  assert.equal(tileGrid(9), '3x3')
+  assert.equal(tileGrid(12), '4x3')
+  assert.equal(tileGrid(16), '4x4')
+  assert.equal(tileGrid(24), '6x4')
+})
+
+// —— signalstats：从 ffmpeg 的 metadata 输出里读回每帧亮度范围 ——
+const SIGNAL_FIXTURE = `frame:0    pts:0       pts_time:0
+lavfi.signalstats.YMIN=16
+lavfi.signalstats.YLOW=16
+lavfi.signalstats.YAVG=16
+lavfi.signalstats.YHIGH=16
+lavfi.signalstats.YMAX=16
+frame:1    pts:512     pts_time:0.017
+lavfi.signalstats.YMIN=16
+lavfi.signalstats.YLOW=40
+lavfi.signalstats.YAVG=120.5
+lavfi.signalstats.YHIGH=200
+lavfi.signalstats.YMAX=235
+`
+
+test('parseSignalStats 逐帧读回 YMIN/YAVG/YMAX', () => {
+  const frames = parseSignalStats(SIGNAL_FIXTURE)
+  assert.equal(frames.length, 2)
+  assert.deepEqual(frames[0], { frame: 0, ymin: 16, yavg: 16, ymax: 16 })
+  assert.deepEqual(frames[1], { frame: 1, ymin: 16, yavg: 120.5, ymax: 235 })
+})
+
+test('parseSignalStats 空输出不报错', () => {
+  assert.deepEqual(parseSignalStats(''), [])
+})
+
+// —— 空镜判据：limited range 的黑是 16、白是 235 ——
+test('isBlankFrame 认得出纯黑与纯白', () => {
+  assert.equal(isBlankFrame({ ymin: 16, ymax: 16 }), true)
+  assert.equal(isBlankFrame({ ymin: 16, yavg: 16, ymax: 18 }), true)
+  assert.equal(isBlankFrame({ ymin: 235, ymax: 235 }), true)
+  assert.equal(isBlankFrame({ ymin: 232, yavg: 234, ymax: 235 }), true)
+})
+
+test('isBlankFrame 不误杀正常画面', () => {
+  // 暗场风格：黑底 16 + 亮线 235，是最常见的正常帧
+  assert.equal(isBlankFrame({ ymin: 16, yavg: 30, ymax: 235 }), false)
+  assert.equal(isBlankFrame({ ymin: 16, yavg: 120, ymax: 200 }), false)
+  assert.equal(isBlankFrame({}), false)
 })
 
 // —— pluginSource：报的就是当前这份代码 ——
