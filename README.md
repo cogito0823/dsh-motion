@@ -19,6 +19,19 @@
 
 外加三个技能：`animation-router`（题材路由）、`design-spec`（写 DESIGN.md）、`qa-rubric`（交付自检）。
 
+## 默认风格
+
+本仓库的默认视觉语言是 **暗场编辑（dark-editorial）**：近黑蓝底、暖白墨色、灰蓝结构线、单一琥珀强调色。
+
+- 规范：[`styles/dark-editorial/STYLE.md`](styles/dark-editorial/STYLE.md)
+- Tokens：[`styles/dark-editorial/tokens.json`](styles/dark-editorial/tokens.json)
+- Python 工具：[`styles/dark-editorial/theme.py`](styles/dark-editorial/theme.py)
+- 参考帧：[`styles/dark-editorial/preview.jpg`](styles/dark-editorial/preview.jpg)
+
+完整参考成片在仓库的 `episodes/euler/euler.mp4`。
+
+新片在 `episodes/<slug>/DESIGN.md` 头部写 `style: dark-editorial@1.0.0`；需要换语言时在分集文件里覆盖。
+
 ## 安装
 
 ```bash

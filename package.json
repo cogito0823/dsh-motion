@@ -15,6 +15,7 @@
   "files": [
     "lib",
     "skills",
+    "styles",
     "cordis.patch.yml",
     "README.md",
     "LICENSE",
