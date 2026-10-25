@@ -38,7 +38,8 @@ function scoreOne(style, query) {
     reasons.push(`关键词: ${keywords.join(', ')}`)
   }
 
-  const uses = (style.uses ?? []).filter((u) => q.includes(u.toLowerCase()))
+  const uses = [...(style.uses ?? []), ...(style.uses_cn ?? [])]
+    .filter((u) => q.includes(u.toLowerCase()))
   if (uses.length) {
     score += uses.length * 2
     reasons.push(`用途: ${uses.join(', ')}`)

@@ -14,7 +14,7 @@ updated: 2026-10-25
 
 1. 先跑 `node scripts/route-style.mjs "<题材>"`：**点名风格优先**，其次按 `styles/registry.json` 的 `keywords` / `uses` 打分，最后才回退默认 `swiss-motion`。分数并列或为 0 时先问用户，不自动拍板。
    常用映射：公式/排版 → `swiss-motion`；数据/图表 → `dataviz`；几何/工程 → `blueprint`；科学讲解 → `whiteboard`；线代/微积分/复数/神经网络 → `3b1b`。
-2. 在项目自己的 `DESIGN.md` 头部写 `style: <slug>` + `style_version: 1.0.0`。
+2. 在项目自己的 `DESIGN.md` 头部写 `style: <slug>` + `style_version: 1.0.0`；风格元数据以 `styles/<slug>/style.json` 为准，`styles/README.md` 与 `registry.json` 用 `npm run styles:index` 生成。
 3. 需要改语言时在项目 `DESIGN.md` 里覆盖，不要改风格包；换全项目默认才改本文件并升版本。
 4. 上屏公式先过 `formula_check`；场景先过 `motion_frames`（默认，不生成视频），定稿后再 `motion_render`。
 5. 参考与示例统一用 HyperFrames 的 [examples](https://hyperframes.heygen.com/examples) / [catalog](https://hyperframes.heygen.com/catalog) / [frame.md](https://hyperframes.heygen.com/prompting/design-systems)。

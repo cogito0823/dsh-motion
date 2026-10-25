@@ -220,6 +220,24 @@ DESIGN.md
 
 没有"W3C 风格路由标准"这种东西；能算标准的是 **design tokens**（颜色/字体/间距的可交换格式）和 **DESIGN.md / frame.md** 这类声明文件。路由本身是产品约定，关键不是算法多复杂，而是**规则显式、结果可复现、低置信度会问人**。
 
+### 对齐事实标准：对齐什么，不对齐什么
+
+**对齐（接口层）**
+
+- `style.json` 采用 Lemo 的字段：`slug` / `num` / `en` / `cn` / `category_en` / `category_cn` / `uses` / `line` / `demo`，再扩展 `keywords` / `avoid` / `aspect` / `fps` / `complexity`；
+- `styles/README.md` 的表和 `styles/registry.json` 从 `style.json` 生成，不再手写（对应 Lemo 的 `styleboard/build.py`）；
+- 选风格语义采用 Lemo `AGENTS.md` 的“点名优先 + 推荐 2–3 个 + 不静默换风格”，并加置信度门；
+- 保留 `style_version` / `source` / `license`，保证可升级、可追溯。
+
+**不对齐（实现层）**
+
+- 不复制 Lemo 的 Canvas/WebGL demo 代码，也不改 manimgx 渲染链；
+- 不采用 Lemo 的 24 fps、相机旅行、手写笔刷等实现细节，只取语法；
+- 不把 `tokens.json` 强改成 W3C DTCG：目前没有外部 token 消费方，改了只会增加转换成本；将来要接 Figma/HF design tokens 时再加适配层；
+- 不照搬 59 套风格，只接与数学/数据/科学相关的几套。
+
+这样既能在元数据、索引、选择语义上和生态互操作，又不会把实现绑死在别人的 demo 上。
+
 ### 目前的局限
 
 - 打分是关键词匹配，不理解语义；"导数"和"切线"可能一个命中 dataviz、一个命中 3b1b（已通过去掉 3b1b 的"导数"关键词缓解）；

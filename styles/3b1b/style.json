@@ -4,9 +4,47 @@
   "cn": "3b1b 数学动画",
   "category_en": "Math explainer",
   "category_cn": "数学讲解",
-  "uses": ["Math education", "Linear algebra", "Calculus", "Neural networks"],
+  "uses": [
+    "Linear algebra",
+    "Calculus",
+    "Probability",
+    "Neural networks"
+  ],
   "source": "https://github.com/subinium/3b1b-style-animation-skill",
   "secondary_source": "https://github.com/adithya-s-k/manim_skill",
   "license": "MIT (style skills); unofficial tribute",
-  "implementation": "manimgx (theme.py + tokens.json)"
+  "implementation": "manimgx (theme.py + tokens.json)",
+  "num": "05",
+  "film": "Rotation on the Unit Circle",
+  "line": "A rotation on the unit circle that lands on e^{iθ} = cosθ + i sinθ.",
+  "line_cn": "单位圆上的一次旋转，收束到 e^{iθ} = cosθ + i sinθ。",
+  "uses_cn": [
+    "线代",
+    "微积分",
+    "概率",
+    "神经网络"
+  ],
+  "keywords": [
+    "向量",
+    "矩阵",
+    "特征值",
+    "旋转",
+    "复数",
+    "单位圆",
+    "线代",
+    "概率",
+    "微积分",
+    "神经网络"
+  ],
+  "avoid": [
+    "产品发布",
+    "纯排版"
+  ],
+  "demo": "showcase/3b1b-unit-circle",
+  "demo_duration_sec": 10.3,
+  "aspect": [
+    "16:9"
+  ],
+  "fps": 30,
+  "complexity": "medium"
 }

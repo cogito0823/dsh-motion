@@ -1,11 +1,47 @@
 {
   "slug": "blueprint",
   "en": "Blueprint",
-  "cn": "蓝图 / 工程制图",
+  "cn": "蓝图工程制图",
   "category_en": "Graphic & Type",
   "category_cn": "图形与排版",
-  "uses": ["Engineering", "Hardware launches", "Tech explainers"],
+  "uses": [
+    "Geometry proof",
+    "Structures",
+    "Dimensions"
+  ],
   "source": "https://github.com/lemomo-ai/lemo-opuscar/tree/main/styles/blueprint",
   "license": "style doc MIT; demo stills CC BY 4.0 (LemoLab)",
-  "implementation": "manimgx (theme.py + tokens.json)"
+  "implementation": "manimgx (theme.py + tokens.json)",
+  "num": "03",
+  "film": "Pythagorean Triple",
+  "line": "A 3-4-5 triangle drawn in drafting order, stamped Q.E.D.",
+  "line_cn": "按制图顺序画出的 3-4-5 三角形，最后盖上 Q.E.D.",
+  "uses_cn": [
+    "几何证明",
+    "结构",
+    "尺寸关系"
+  ],
+  "keywords": [
+    "几何",
+    "证明",
+    "三角形",
+    "圆",
+    "角度",
+    "尺寸",
+    "工程",
+    "结构",
+    "作图",
+    "勾股"
+  ],
+  "avoid": [
+    "图表",
+    "手绘"
+  ],
+  "demo": "showcase/blueprint-pythagoras",
+  "demo_duration_sec": 6.9,
+  "aspect": [
+    "16:9"
+  ],
+  "fps": 30,
+  "complexity": "medium"
 }

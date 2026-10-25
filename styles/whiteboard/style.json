@@ -4,8 +4,44 @@
   "cn": "白板讲解",
   "category_en": "Hand-drawn & Painting",
   "category_cn": "手绘与绘画",
-  "uses": ["Explainers", "Online courses", "Science"],
+  "uses": [
+    "Explainers",
+    "Online courses",
+    "Science"
+  ],
   "source": "https://github.com/lemomo-ai/lemo-opuscar/tree/main/styles/whiteboard",
   "license": "style doc MIT; demo stills CC BY 4.0 (LemoLab)",
-  "implementation": "manimgx (theme.py + tokens.json)"
+  "implementation": "manimgx (theme.py + tokens.json)",
+  "num": "04",
+  "film": "Secant on a Whiteboard",
+  "line": "A derivative explained on one warm whiteboard with three markers.",
+  "line_cn": "在一块暖白板上，用三支马克笔讲清导数。",
+  "uses_cn": [
+    "科学解释",
+    "课程",
+    "机制说明"
+  ],
+  "keywords": [
+    "讲解",
+    "课程",
+    "科学",
+    "机制",
+    "流程",
+    "为什么",
+    "原理",
+    "物理",
+    "化学",
+    "生物"
+  ],
+  "avoid": [
+    "高密度公式",
+    "暗场"
+  ],
+  "demo": "showcase/whiteboard-derivative",
+  "demo_duration_sec": 9.6,
+  "aspect": [
+    "16:9"
+  ],
+  "fps": 30,
+  "complexity": "medium"
 }

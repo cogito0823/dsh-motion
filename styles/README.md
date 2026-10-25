@@ -1,14 +1,16 @@
 # 风格库
 
-可复用的视觉语言。当前有 5 套：4 套改编自 [Lemo-Opuscar](https://github.com/lemomo-ai/lemo-opuscar)（MIT），1 套来自 Manim 社区的 3b1b skill。都不是自创：
+可复用的视觉语言。当前有 5 套：4 套改编自 [Lemo-Opuscar](https://github.com/lemomo-ai/lemo-opuscar)（MIT），1 套来自 Manim 社区的 3b1b skill。都不是自创。`style.json` 是唯一事实来源；下面的表和 `registry.json` 由 `node scripts/build-style-index.mjs` 生成，不手改：
 
+<!-- styles:start -->
 | 风格 | 适合 | 来源 | 入口 |
 |---|---|---|---|
-| `swiss-motion` / 瑞士动态排版（默认） | 公式、定义、数据结论 | [Lemo](https://github.com/lemomo-ai/lemo-opuscar/tree/main/styles/swiss-motion) | [STYLE](swiss-motion/STYLE.md) · [tokens](swiss-motion/tokens.json) · [theme](swiss-motion/theme.py) |
-| `dataviz` / 数据叙事 | 趋势、比较、分布、科学数据 | [Lemo](https://github.com/lemomo-ai/lemo-opuscar/tree/main/styles/dataviz) | [STYLE](dataviz/STYLE.md) · [tokens](dataviz/tokens.json) · [theme](dataviz/theme.py) |
-| `blueprint` / 蓝图工程制图 | 几何证明、结构、尺寸关系 | [Lemo](https://github.com/lemomo-ai/lemo-opuscar/tree/main/styles/blueprint) | [STYLE](blueprint/STYLE.md) · [tokens](blueprint/tokens.json) · [theme](blueprint/theme.py) |
-| `whiteboard` / 白板讲解 | 科学解释、课程、机制说明 | [Lemo](https://github.com/lemomo-ai/lemo-opuscar/tree/main/styles/whiteboard) | [STYLE](whiteboard/STYLE.md) · [tokens](whiteboard/tokens.json) · [theme](whiteboard/theme.py) |
-| `3b1b` / 3b1b 数学动画 | 线代、微积分、概率、神经网络 | [subinium](https://github.com/subinium/3b1b-style-animation-skill) · [manim_skill](https://github.com/adithya-s-k/manim_skill) | [STYLE](3b1b/STYLE.md) · [tokens](3b1b/tokens.json) · [theme](3b1b/theme.py) |
+| `swiss-motion` / 瑞士动态排版（默认） | 公式、定义、数据结论、排版 | Lemo-Opuscar | [STYLE](swiss-motion/STYLE.md) · [tokens](swiss-motion/tokens.json) · [theme](swiss-motion/theme.py) |
+| `dataviz` / 数据叙事 | 趋势、比较、分布、科学数据 | Lemo-Opuscar | [STYLE](dataviz/STYLE.md) · [tokens](dataviz/tokens.json) · [theme](dataviz/theme.py) |
+| `blueprint` / 蓝图工程制图 | 几何证明、结构、尺寸关系 | Lemo-Opuscar | [STYLE](blueprint/STYLE.md) · [tokens](blueprint/tokens.json) · [theme](blueprint/theme.py) |
+| `whiteboard` / 白板讲解 | 科学解释、课程、机制说明 | Lemo-Opuscar | [STYLE](whiteboard/STYLE.md) · [tokens](whiteboard/tokens.json) · [theme](whiteboard/theme.py) |
+| `3b1b` / 3b1b 数学动画 | 线代、微积分、概率、神经网络 | subinium + manim_skill | [STYLE](3b1b/STYLE.md) · [tokens](3b1b/tokens.json) · [theme](3b1b/theme.py) |
+<!-- styles:end -->
 
 ## 约定
 

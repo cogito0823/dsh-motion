@@ -42,6 +42,8 @@
     "smoke": "node scripts/smoke.mjs",
     "dev": "node scripts/dev.mjs",
     "route": "node scripts/route-style.mjs",
+    "styles:index": "node scripts/build-style-index.mjs",
+    "styles:check": "node scripts/build-style-index.mjs --check",
     "check:meta": "node scripts/check-meta.mjs",
     "prepack": "npm run check && npm test && npm run smoke"
   },

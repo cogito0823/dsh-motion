@@ -4,8 +4,47 @@
   "cn": "数据叙事",
   "category_en": "Information & Keynote",
   "category_cn": "信息与发布",
-  "uses": ["Data journalism", "Reports", "Climate & science"],
+  "uses": [
+    "Trends",
+    "Comparison",
+    "Distribution",
+    "Scientific data"
+  ],
   "source": "https://github.com/lemomo-ai/lemo-opuscar/tree/main/styles/dataviz",
   "license": "style doc MIT; demo stills CC BY 4.0 (LemoLab)",
-  "implementation": "manimgx (theme.py + tokens.json)"
+  "implementation": "manimgx (theme.py + tokens.json)",
+  "num": "02",
+  "film": "Secant to Tangent",
+  "line": "A secant slides into a tangent; the slope reading falls from 2.50 to 2.00.",
+  "line_cn": "割线滑成切线，斜率读数从 2.50 落到 2.00。",
+  "uses_cn": [
+    "趋势",
+    "比较",
+    "分布",
+    "科学数据"
+  ],
+  "keywords": [
+    "数据",
+    "图表",
+    "趋势",
+    "比较",
+    "分布",
+    "斜率",
+    "切线",
+    "割线",
+    "函数",
+    "变化率",
+    "统计"
+  ],
+  "avoid": [
+    "纯文字排版",
+    "角色叙事"
+  ],
+  "demo": "showcase/dataviz-secant",
+  "demo_duration_sec": 10.1,
+  "aspect": [
+    "16:9"
+  ],
+  "fps": 30,
+  "complexity": "low"
 }

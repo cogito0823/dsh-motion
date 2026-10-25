@@ -4,8 +4,44 @@
   "cn": "瑞士动态排版",
   "category_en": "Graphic & Type",
   "category_cn": "图形与排版",
-  "uses": ["Brand identity", "Events", "Design education"],
+  "uses": [
+    "Formula",
+    "Definition",
+    "Data conclusion",
+    "Typography"
+  ],
   "source": "https://github.com/lemomo-ai/lemo-opuscar/tree/main/styles/swiss-motion",
   "license": "style doc MIT; demo stills CC BY 4.0 (LemoLab)",
-  "implementation": "manimgx (theme.py + tokens.json)"
+  "implementation": "manimgx (theme.py + tokens.json)",
+  "num": "01",
+  "film": "Euler Formula",
+  "line": "A formula on a Swiss grid: one red accent, five constants.",
+  "line_cn": "瑞士网格上的一个公式：一个红色信号色，五个常数。",
+  "uses_cn": [
+    "公式",
+    "定义",
+    "数据结论",
+    "排版"
+  ],
+  "keywords": [
+    "公式",
+    "欧拉",
+    "定理",
+    "定义",
+    "恒等式",
+    "推导",
+    "排版",
+    "方程"
+  ],
+  "avoid": [
+    "图表",
+    "几何证明"
+  ],
+  "demo": "showcase/swiss-euler",
+  "demo_duration_sec": 6.2,
+  "aspect": [
+    "16:9"
+  ],
+  "fps": 30,
+  "complexity": "low"
 }

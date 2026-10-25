@@ -45,6 +45,17 @@ test('返回 top 3', () => {
   assert.equal(routeStyle('切线', registry).ranked.length, 3)
 })
 
+test('registry 元数据与 Lemo style.json 对齐', () => {
+  const slugs = registry.styles.map((s) => s.slug).sort()
+  assert.deepEqual(slugs, ['3b1b', 'blueprint', 'dataviz', 'swiss-motion', 'whiteboard'])
+  for (const style of registry.styles) {
+    assert.ok(style.num, `${style.slug} 缺少 num`)
+    assert.ok(style.name_en && style.name_cn, `${style.slug} 缺名字`)
+    assert.ok(style.category_cn, `${style.slug} 缺分类`)
+    assert.ok(Array.isArray(style.uses) && style.uses.length > 0)
+  }
+})
+
 if (failed > 0) {
   console.error(`\n${failed} test(s) failed`)
   process.exit(1)
