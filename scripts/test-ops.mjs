@@ -16,7 +16,7 @@ import { join } from 'node:path'
 
 import { assertApproved, assertBrief, readApprovals } from '../lib/approvals.js'
 import { pluginSource } from '../lib/doctor.js'
-import { toolConfig } from '../lib/index.js'
+import { sessionCwd, toolConfig } from '../lib/index.js'
 import { writeProjectManifest } from '../lib/project.js'
 import { importFresh } from '../lib/fresh.js'
 import {
@@ -32,10 +32,22 @@ import {
 } from '../lib/ops.js'
 
 let failed = 0
+const pending = []
 
 function test(name, fn) {
   try {
-    fn()
+    const result = fn()
+    if (result && typeof result.then === 'function') {
+      pending.push(result.then(
+        () => console.log(`ok   ${name}`),
+        (error) => {
+          failed++
+          console.log(`FAIL ${name}`)
+          console.error(`     ${String(error.message).split('\n')[0]}`)
+        },
+      ))
+      return
+    }
     console.log(`ok   ${name}`)
   } catch (error) {
     failed++
@@ -282,12 +294,30 @@ test('pluginSource 版本与 lib 路径自洽', () => {
   rmSync(root, { recursive: true, force: true })
 }
 
-test('toolConfig 用会话 cwd 推导项目集，不认进程 cwd', () => {
-  const exec = { agent: { session: { cwd: '/tmp/session-x' } } }
-  assert.equal(toolConfig({}, exec).workspace, '/tmp/session-x/dsh-motion-projects')
-  assert.equal(toolConfig({ workspace: '/tmp/explicit' }, exec).workspace, '/tmp/explicit')
-  assert.deepEqual(toolConfig({}), {}, '没有会话信息时不瞎猜')
-  assert.deepEqual(toolConfig({}, {}), {})
+// —— 会话工作目录解析：只用官方形状，拿不到就抛错 ——
+test('toolConfig 用 workingDirectory 服务推导项目集', async () => {
+  const ctx = { workingDirectory: { ensure: async () => '/tmp/session-a' } }
+  const exec = { agent: {}, signal: undefined }
+  assert.equal((await toolConfig({}, ctx, exec)).workspace, '/tmp/session-a/dsh-motion-projects')
+})
+
+test('toolConfig 回落到 session.header.cwd（Session 没有 cwd 字段）', async () => {
+  const exec = { agent: { session: { header: { cwd: '/tmp/session-b' } } } }
+  assert.equal((await toolConfig({}, {}, exec)).workspace, '/tmp/session-b/dsh-motion-projects')
+  // 伪造的 session.cwd 不再被采信
+  const bogus = { agent: { session: { cwd: '/tmp/process-cwd' } } }
+  await assert.rejects(() => toolConfig({}, {}, bogus), /无法确定会话工作目录/)
+})
+
+test('toolConfig 回落 defaultDirectory；显式配置优先', async () => {
+  const ctx = { workingDirectory: { defaultDirectory: '/tmp/default-dir' } }
+  assert.equal((await toolConfig({}, ctx, {})).workspace, '/tmp/default-dir/dsh-motion-projects')
+  assert.equal((await toolConfig({ workspace: '/tmp/explicit' }, ctx, {})).workspace, '/tmp/explicit')
+})
+
+test('拿不到会话目录时抛错，不回退进程 cwd', async () => {
+  await assert.rejects(() => toolConfig({}, {}, {}), /无法确定会话工作目录/)
+  await assert.rejects(() => sessionCwd({}, {}), /无法确定会话工作目录/)
 })
 
 test('parseFrameRate 解析 30000/1001 与 0/0', () => {
@@ -340,6 +370,8 @@ test('videoInfoFromProbe 认 VFR raw（621 帧 / 30.033s / 20.68fps）', () => {
     console.log('FAIL importFresh 按 mtime 重新加载')
   }
 }
+
+await Promise.all(pending)
 
 if (failed > 0) {
   console.error(`\n${failed} test(s) failed`)

@@ -163,8 +163,15 @@ brief
 
 项目放在**会话工作目录**下的 `dsh-motion-projects/`，不挂家目录、不向上搜同名目录：
 
-> 会话工作目录来自 `exec.agent.session.cwd`，**不是**进程的 `process.cwd()`——插件进程的 cwd 是
-> `~/.dsh/profiles/<profile>`，拿它当项目集就会解析到 profile 里。工具层用 `toolConfig()` 注入。
+> 会话工作目录按这个顺序取，**绝不回退 `process.cwd()`**——插件进程的 cwd 是
+> `~/.dsh/profiles/<profile>`，拿它当项目集就会解析到 profile 里：
+>
+> 1. `await ctx.workingDirectory.ensure(agent, signal)`（官方入口）
+> 2. `exec.agent.session.header.cwd`（`Session` 上没有 `cwd` 字段）
+> 3. `ctx.workingDirectory.defaultDirectory`
+> 4. 都没有 → 抛「无法确定会话工作目录」
+>
+> 三个项目类工具（`motion_frames` / `motion_render` / `motion_probe`）都经 `toolConfig()` 注入。
 
 ```text
 <会话 cwd>/dsh-motion-projects/

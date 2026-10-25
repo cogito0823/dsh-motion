@@ -32,6 +32,8 @@ npm 页面只渲染 README，不提供每个版本的 release note；完整记�
 
 | 版本 | 日期 | 主要内容 |
 |---|---|---|
+| [0.10.2](https://github.com/cogito0823/dsh-motion/releases/tag/v0.10.2) | 2026-10-26 | 修复：会话工作目录改走 `workingDirectory.ensure` / `session.header.cwd`，取不到就报错；报错不再暗示“把项目搬到某处” |
+
 | [0.10.1](https://github.com/cogito0823/dsh-motion/releases/tag/v0.10.1) | 2026-10-26 | 修复：项目集按 `exec.agent.session.cwd` 定位，不再误用插件进程 cwd（`~/.dsh/profiles/<p>`）；metrics 也走同一坐标系 |
 | [0.10.0](https://github.com/cogito0823/dsh-motion/releases/tag/v0.10.0) | 2026-10-26 | 需求卡点固定七题（含时长/帧率/受众/风格/旁白）；项目集收敛到会话工作区的 `dsh-motion-projects/`，解析不越界/不嵌套/无 legacy；账本通过后渲染不再逐次弹窗 |
 | [0.9.1](https://github.com/cogito0823/dsh-motion/releases/tag/v0.9.1) | 2026-10-26 | 文档：README 增加版本摘要与 Releases 链接（docs-only） |
@@ -73,7 +75,7 @@ node scripts/run-report.mjs dsh-motion-projects/my-film --wall 752
 
 - 模板生成 `motion.project.json` / `scene.py` / `timeline.json` / `timeline.py` / `narration.json` / `assemble.py` / `DESIGN.md`；
 - **一个项目 = 一部片子**，放在**会话工作目录**下的 `dsh-motion-projects/<目录名>`（可用 `MOTION_PROJECTS_HOME` 改）；
-  工具路径用 `exec.agent.session.cwd` 定位（不是插件进程的 cwd，那是 profile 目录）；
+  工具路径用 `ctx.workingDirectory.ensure()` / `session.header.cwd` 定位（不是插件进程的 cwd，那是 profile 目录；都取不到就直接报错）；
 - 项目集只有这一层：`dsh-motion-projects/registry.json` 是可删可重建的索引，不参与寻址；
 - `motion.project.json` 是唯一项目根，`id` 在这里，目录改名不影响身份；`APPROVALS.json` / `out/` / `audio/` / `.dsh-motion/` 都相对它；
 - 解析**不越界、不向上找**：workspace 外的 `scene.py` 一律 unmanaged；子目录里的项目会被拒绝（不允许嵌套）；
