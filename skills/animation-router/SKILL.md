@@ -21,7 +21,7 @@ node scripts/plan-questions.mjs "<brief>" --json
 - **受众**：只对数学/科学题材、且 brief 没提"高中/大学/大众"时问；选项按平台排（抖音→大众科普，B站→高中）；
 - **旁白**：只在交付为旁白、且 brief 没说"中文/英文/双语"时问；选项是"语言 + 声音"；
 - **时长**：从 brief 提取（"30 秒"/"1 分钟"），不单独问；
-- 最多 4 题，问完一次就开做，不追问；没回答的按 `assumptions` 执行。
+- 最多 4 题，问完不再追问；没回答的按 `assumptions` 执行。**问完不等于开工**，接着进 §4 确认门。
 
 选项是**推出来的**，不是固定清单：画幅看平台线索，交付看有无旁白，风格看 registry 命中，受众看题材与平台。
 用户也可以直接在 `Other` 里写别的。
@@ -55,25 +55,41 @@ node scripts/plan-questions.mjs "<brief>" --json
 
 三者都只是素材层；**需要交付时**再统一进 HyperFrames 工程，默认的极简模式不经过 HF。
 
-## 4. 固定顺序（默认极简，先帧后片）
+## 4. 确认门（阻塞，按顺序）
+
+写完整场景、出全片之前，逐项产出并让用户确认。**不要跳步，不要用“我先做起来”代替确认。**
+
+1. **需求**：§0 的卡点；
+2. **脚本 / 文案**：逐句旁白、上屏文字、公式清单（公式先过 `formula_check`）；
+3. **分镜**：镜头号、起止秒、画面、运动、字幕/旁白、验收点；
+4. **视觉**：`DESIGN.md` + 3 张风格帧（真实代码，只出帧，不渲染视频）；
+5. **交付清单**：画幅 / fps / 时长 / 文件 / 音频 / 字幕；
+6. **等用户明确说“可以开始 / 开始做 / 按这个执行 / 开工”**。
+
+任何一步用户改了，就回到那一步重确认，不要直接进下一步。模板和清单见
+[references/confirmation.md](references/confirmation.md)。
+
+“好 / 可以 / 行”如果只是回答某个选项，**不算**整体开工；不确定就问：
+“脚本、分镜、风格帧都确认了，现在开始执行吗？”
+
+## 5. 执行顺序（确认后才开始）
 
 ```
-1. DESIGN.md（design spec）      ← 先定颜色/字体/禁用项/参考
-2. formula_check（数学题材）      ← 每条上屏公式先验
-3. 画面 + motion_frames           ← 默认：按秒出 3–6 帧，看帧改，不渲染视频
-4. 分镜表（仅用户要时）            ← 关键镜头，用真实代码出帧，等确认
-5. motion_render                  ← 定稿后才编码 mp4
-6. HyperFrames composition        ← 字幕/旁白/混音/排版（需要时才进）
-7. hyperframes check / motion_probe ← 只检查已经生成的成片
+1. 场景代码 + formula_check
+2. motion_frames（3–6 帧）
+3. 确认过的分镜帧（6–9 帧，若要）
+4. motion_render（mp4）
+5. HyperFrames composition（字幕/旁白/混音；需要时才进）
+6. hyperframes check / motion_probe（只对成片）
 ```
 
-**默认不使用 HyperFrames**：只有需要字幕、旁白、混音、复杂图文编排时才进第 6 步。
-`motion_frames` 内部是 `manimgx inspect`，只画请求的时刻并做版式检查，几秒出图；
+`motion_frames` 内部是 `manimgx inspect`，只画请求的时刻并做版式检查；
 `motion_probe` 是给已有 mp4 做体检的，不要用它替代看帧。
 
-## 5. 四条硬规则
+## 6. 五条硬规则
 
-1. **没有 DESIGN.md 或参考语法，不开工**——否则每次都是同一个默认 look；
-2. **默认先帧后片**：先用 `motion_frames` 把画面改对，再决定要不要渲染；
-3. **字幕放在 composition 层**，不烧进 Manim 或 canvas；
-4. **公式先过 `formula_check`**，再进画面。
+1. **没有明确开工指令，不执行**：没听到“可以开始”就不写完整场景、不出全片；
+2. **没有 DESIGN.md 或参考语法，不开工**——否则每次都是同一个默认 look；
+3. **默认先帧后片**：先用 `motion_frames` 把画面改对，再决定要不要渲染；
+4. **字幕放在 composition 层**，不烧进 Manim 或 canvas；
+5. **公式先过 `formula_check`**，再进画面。

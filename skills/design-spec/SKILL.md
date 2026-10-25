@@ -25,6 +25,10 @@ HyperFrames 的 look 文档原话：**不给外部输入，相同的 brief 每�
 
 风格：点名优先；没有点名就按 `styles/registry.json` 打分；`high` 才直接写，`medium`/`low` 先给用户 top 2–3 确认。
 
+## 确认门
+
+`DESIGN.md` 和 3 张风格帧是确认门的第 4 步：先有确认过的脚本与分镜，再做视觉。用户明确说“可以开始”之前，不要写完整场景、不要渲染成片。流程见 [animation-router](../animation-router/SKILL.md) 的 §4。
+
 ## 最小形态
 
 ```markdown

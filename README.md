@@ -64,6 +64,20 @@
 
 汇总见 [showcase/README.md](showcase/README.md)。
 
+## 开工前确认
+
+顺序是硬性的：
+
+1. 需求卡点（画幅 / 交付 / 风格 / 受众 / 旁白）
+2. 脚本 / 文案（逐句旁白、上屏文字、公式）
+3. 分镜（镜头、秒数、画面、运动、字幕）
+4. `DESIGN.md` + 3 张风格帧（只出帧，不渲染）
+5. 交付清单（尺寸 / fps / 时长 / 文件 / 音频 / 字幕）
+6. **用户明确说“可以开始 / 开始做 / 按这个执行”**
+
+没听到第 6 步的明确指令，不写完整场景、不出全片。清单模板见
+[skills/animation-router/references/confirmation.md](skills/animation-router/references/confirmation.md)。
+
 ## 安装
 
 ```bash

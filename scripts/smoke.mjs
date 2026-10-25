@@ -16,6 +16,7 @@ const required = [
   'lib/doctor.js',
   'lib/fresh.js',
   'skills/animation-router/SKILL.md',
+  'skills/animation-router/references/confirmation.md',
   'skills/design-spec/SKILL.md',
   'skills/qa-rubric/SKILL.md',
   'styles/registry.json',

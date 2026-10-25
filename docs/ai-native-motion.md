@@ -50,7 +50,7 @@ HF 的卖点是 "same input, same frames, same output"：HTML + 可 seek 的动�
 
 - Lemo-Opuscar 明确写着风格是为 Claude Opus 5.5 调的，别的模型不一定复现得好；代码 MIT、demo 与静帧 CC BY 4.0；
 - 它的 59 个风格覆盖纸感、印刷、像素、3D、纪录片等，适合当"语言菜单"，不适合直接当品牌规范；
-- 可借鉴的三件事：`STYLE.md` 作为 style prompt、三张风格帧验收、分镜只在被要求时做；
+- 可借鉴的三件事：`STYLE.md` 作为 style prompt、三张风格帧验收、分镜作为确认材料；
 - 授权上，demo 静帧可商用但需署名 LemoLab；风格文件本身是 MIT。
 
 本仓库的选择：删除自创的 `dark-editorial`，改为 4 套 Lemo 风格（`swiss-motion` / `dataviz` / `blueprint` / `whiteboard`）+ 1 套 Manim 社区的 `3b1b`，每套按 `STYLE.md` + `tokens.json` + `theme.py` + `preview.jpg` 落地；外部参考统一指向 HF。
@@ -125,7 +125,7 @@ manimgx inspect scene.py -t 1.2,4.5,end
 DESIGN.md
   → motion_frames（3–6 帧：开场 / 转折 / 结论）
   → 改场景 → 再出帧（秒级）
-  → 需要给用户看分镜时：6–9 帧（真实代码）
+  → 确认门：脚本 → 分镜 → DESIGN/风格帧 → 用户明确“开始”
   → formula_check
   → motion_render（定稿后）
   → 需要字幕/旁白/混音：进 HF
@@ -199,6 +199,20 @@ node scripts/plan-questions.mjs "<brief>" --json
 - **时长/语言**：从 brief 提取，不单独问；未回答的写进 `assumptions`。
 
 最多 4 题。关键不是“问满四道”，而是**能推断的不问、选项按上下文生成、问完一次就开做**。
+
+### 确认门（本仓库的硬规则）
+
+需求卡点问完，**不等于开工**。之后按顺序确认：
+
+1. 脚本/文案（旁白逐句、上屏文字、公式）；
+2. 分镜（镜头、秒数、画面、运动、字幕）；
+3. `DESIGN.md` + 3 张风格帧（只出帧）；
+4. 交付清单（尺寸、fps、时长、文件、音频、字幕）；
+5. 用户明确说“可以开始 / 开始做 / 按这个执行 / 开工”。
+
+任何一步改动，回到该步重确认。以下不算开工：只对某个选项说“好”、只确认了脚本或分镜、说“看着办”但没授权执行。不确定就问一句“现在开始执行吗？”。
+
+模板在 [skills/animation-router/references/confirmation.md](../skills/animation-router/references/confirmation.md)。
 
 ## 8. 风格路由：目前怎么做，通用标准是什么
 
@@ -274,7 +288,7 @@ node scripts/plan-questions.mjs "<brief>" --json
 1. **风格 = 不变量 + 自由故事。** `STYLE.md` 锁死 look、颜色、字体、运动、声音；故事、镜头、节奏由导演决定（Lemo 的 AGENTS.md 原话：`STYLE.md` is fixed；everything else is yours to direct）。
 2. **风格按名字选，不按形容词选。** 用户说 "swiss-motion" / "瑞士动态排版"，agent 查索引、读 `STYLE.md`；没选就推荐 2–3 个最接近的。
 3. **风格文档有固定骨架。** Lemo 是 11 节；mg-styles-15 是四段式，其中 signature features 必须可检验（"cubic-bezier(0.34,1.56,0.64,1)，错峰 2–4 帧"，不是"要有弹性"）。
-4. **先风格帧，后分镜，最后成片。** 三张真实代码出的风格帧 → 用户要看才做 6–9 张分镜 → 成片；风格帧不过不往下走。
+4. **先确认，后执行。** 脚本 → 分镜 → DESIGN/风格帧 → 交付清单，逐项确认；用户明确说“开始”才写完整场景、出片。
 5. **独立评审。** 另一个 AI 用 rubric 按 7 个维度打分（风格保真、概念、运动、排版、质感、声画同步、技术），给 5–10 条带时间码的修改，再改两轮。
 6. **确定性。** 帧是 `render(t)` 的纯函数；同一输入同一输出，便于批量与回归。
 
