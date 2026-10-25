@@ -25,6 +25,28 @@
 模块边界、进程拓扑、数据流与不变量见 [ARCHITECTURE.md](ARCHITECTURE.md)；设计理由与外部调研见
 [docs/ai-native-motion.md](docs/ai-native-motion.md)。
 
+## 版本与发布说明
+
+npm 页面只渲染 README，不提供每个版本的 release note；完整记录在
+[GitHub Releases](https://github.com/cogito0823/dsh-motion/releases)。下面是当前版本摘要：
+
+| 版本 | 日期 | 主要内容 |
+|---|---|---|
+| [0.9.1](https://github.com/cogito0823/dsh-motion/releases/tag/v0.9.1) | 2026-10-26 | 文档：README 增加版本摘要与 Releases 链接（docs-only） |
+| [0.9.0](https://github.com/cogito0823/dsh-motion/releases/tag/v0.9.0) | 2026-10-26 | 项目根 manifest、审批门与审计、时间轴自检、TTS 缓存、VFR/CFR、运行账本、showcase 标准化 |
+| [0.6.0](https://github.com/cogito0823/dsh-motion/releases/tag/v0.6.0) | 2026-10-26 | 免费 edge-tts 旁白、词级 timing、SRT、混音 |
+| [0.5.0](https://github.com/cogito0823/dsh-motion/releases/tag/v0.5.0) | 2026-10-25 | requirements brief 硬门；无锁定时 `motion_frames` 拒绝出帧 |
+| [0.4.3](https://github.com/cogito0823/dsh-motion/releases/tag/v0.4.3) | 2026-10-25 | 预检合并为一次 `motion_doctor`，指纹缓存；TTL 边界修复 |
+| [0.4.2](https://github.com/cogito0823/dsh-motion/releases/tag/v0.4.2) | 2026-10-25 | render 规格生效；按帧数强制 CFR |
+| [0.4.1](https://github.com/cogito0823/dsh-motion/releases/tag/v0.4.1) | 2026-10-25 | 未 approved checkpoint 拒绝 render |
+| [0.4.0](https://github.com/cogito0823/dsh-motion/releases/tag/v0.4.0) | 2026-10-25 | 分档确认门、`APPROVALS.json`、pre-flight、CFR |
+| [0.3.0](https://github.com/cogito0823/dsh-motion/releases/tag/v0.3.0) | 2026-10-25 | 风格路由 registry/CLI；3b1b + whiteboard |
+| [0.2.0](https://github.com/cogito0823/dsh-motion/releases/tag/v0.2.0) | 2026-10-25 | Lemo 风格库、frames-first、showcase、probe/doctor 改进 |
+| [0.1.1](https://github.com/cogito0823/dsh-motion/releases/tag/v0.1.1) | 2026-10-25 | OIDC Trusted Publishing、npm badge、unofficial 标记 |
+| [0.1.0](https://github.com/cogito0823/dsh-motion/releases/tag/v0.1.0) | 2026-10-25 | 首个公开版本：4 个工具、3 个 skill |
+
+`0.7.0` / `0.8.0` 未单独发布，改动已并入 `0.9.0`。
+
 ## 两种模式
 
 | | 极简模式（默认） | 交付模式 |
