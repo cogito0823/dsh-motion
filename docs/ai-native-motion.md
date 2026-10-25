@@ -198,7 +198,7 @@ node scripts/plan-questions.mjs "<brief>" --json
 - **旁白**：只在交付为旁白、且 brief 未提“中文/英文/双语”时问；选项是语言 + 声音；
 - **时长/语言**：从 brief 提取，不单独问；未回答的写进 `assumptions`。
 
-最多 4 题。关键不是“问满四道”，而是**能推断的不问、选项按上下文生成、问完一次就开做**。同时输出 `assumptions.gateMode`：≤15s 且无旁白为 `light`，15–60s 或有旁白为 `standard`，>60s 或多段为 `full`。
+最多 4 题。关键不是“问满四道”，而是**选项按上下文生成、问完一次就开做**。注意「能推断」只决定要不要单独出题，不决定要不要确认：推断出来的结论要在回复里回显一次，用户点头后才落账（`requirements.brief`）。没落账时 `motion_frames` 拒绝出帧。同时输出 `assumptions.gateMode`：≤15s 且无旁白为 `light`，15–60s 或有旁白为 `standard`，>60s 或多段为 `full`。
 
 ### 确认门（本仓库的硬规则，分档）
 
@@ -214,6 +214,8 @@ node scripts/plan-questions.mjs "<brief>" --json
 
 ```bash
 node scripts/approvals.mjs init <project> --mode light
+node scripts/approvals.mjs set <project> requirements approved \
+  --duration 15s --aspect 1920x1080 --delivery silent --note "用户确认"
 node scripts/approvals.mjs set <project> script_storyboard approved --note "用户确认"
 node scripts/approvals.mjs check <project>
 ```

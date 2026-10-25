@@ -38,12 +38,43 @@ test('不能跳过前置阶段', () => {
   assert.equal(run(['set', project, 'script_storyboard', 'approved']).code, 1)
 })
 
+test('需求必须落 时长/画幅/交付，否则拒绝', () => {
+  const result = run(['set', project, 'requirements', 'approved', '--note', '只有备注'])
+  assert.equal(result.code, 1)
+  assert.match(result.out, /--duration/)
+})
+
+test('需求字段格式不对会报错', () => {
+  const result = run([
+    'set', project, 'requirements', 'approved',
+    '--duration', '30', '--aspect', '1920x1080', '--delivery', 'narrated',
+  ])
+  assert.equal(result.code, 1)
+  assert.match(result.out, /30s/)
+})
+
 test('按顺序全部确认后 check 通过', () => {
-  assert.equal(run(['set', project, 'requirements', 'approved', '--note', '需求']).code, 0)
+  assert.equal(run([
+    'set', project, 'requirements', 'approved',
+    '--duration', '30s', '--aspect', '1920x1080', '--delivery', 'narrated', '--note', '需求',
+  ]).code, 0)
   assert.equal(run(['set', project, 'script_storyboard', 'approved', '--note', '脚本+分镜']).code, 0)
   assert.equal(run(['set', project, 'look', 'approved', '--note', '3 帧']).code, 0)
   assert.equal(run(['set', project, 'start', 'approved', '--note', '可以开始']).code, 0)
   assert.equal(run(['check', project]).code, 0)
+})
+
+test('改需求会把下游确认重置为 pending', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'dsh-approvals-reset-'))
+  run(['init', dir, '--mode', 'light'])
+  run(['set', dir, 'requirements', 'approved', '--duration', '15s', '--aspect', '1080x1920', '--delivery', 'silent'])
+  run(['set', dir, 'script_storyboard', 'approved', '--note', '脚本'])
+  assert.equal(run(['check', dir]).code, 1)
+  // 换交付方式：旧的“脚本已确认”必须作废
+  assert.equal(run(['set', dir, 'requirements', 'approved', '--duration', '30s', '--aspect', '1920x1080', '--delivery', 'narrated']).code, 0)
+  const out = run(['show', dir]).out
+  assert.match(out, /脚本.*pending/)
+  rmSync(dir, { recursive: true, force: true })
 })
 
 test('standard 模式包含独立脚本/分镜/交付', () => {

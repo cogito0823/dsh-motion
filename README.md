@@ -79,6 +79,14 @@
 
 `motion_render` 会读项目里的 `APPROVALS.json`；没有，或 `delivery` / `start` 等阶段未全部 approved，直接报错，不会偷偷渲染。
 
+`motion_frames` 也会拦：项目有账本、但需求没落「时长 / 画幅 / 交付」时，直接拒绝出帧。第一步永远是问这三项，然后落账：
+
+```bash
+npm run approvals -- init <project> --mode standard
+npm run approvals -- set <project> requirements approved \
+  --duration 30s --aspect 1920x1080 --delivery narrated --note "用户确认"
+```
+
 没听到第 6 步的明确指令，不写完整场景、不出全片。清单模板见
 [skills/animation-router/references/confirmation.md](skills/animation-router/references/confirmation.md)。
 

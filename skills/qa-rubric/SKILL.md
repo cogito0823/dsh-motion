@@ -71,3 +71,5 @@ npx hyperframes check
 mp4 + `.srt` + 场景源码 + `DESIGN.md` + 分镜表。
 
 开工前跑过 `node scripts/approvals.mjs check <project>`；确保 `APPROVALS.json` 里 `start` 是用户明确授权，而不是 agent 自己填的。
+
+交付物要和 `requirements.brief` 对得上：时长、画幅、交付方式（`frames` / `silent` / `narrated`）。改过需求之后，下游确认必须重新走过一遍——账本会自动把它们重置为 pending。

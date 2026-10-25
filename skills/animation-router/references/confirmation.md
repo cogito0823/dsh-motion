@@ -12,11 +12,17 @@
 
 `light` 把“脚本”和“分镜”合成一张表：每个镜头一行，写秒数、画面、上屏文字/公式。
 
-## 1. 需求
+## 1. 需求（硬门）
 
-- [ ] 画幅与像素：16:9 / 9:16 / 1:1
-- [ ] 时长
-- [ ] 交付：先出帧 / 静音 mp4 / 旁白 + 字幕（HF）
+这三项必须落进 `APPROVALS.json` 的 `requirements.brief`，否则 `motion_frames` 拒绝出帧：
+
+- [ ] 时长：如 `30s`
+- [ ] 画幅：如 `1920x1080` / `1080x1920`
+- [ ] 交付：`frames`（先出帧）/ `silent`（静音 mp4）/ `narrated`（旁白 + 字幕，进 HF）
+
+以下可选项，有就给，没有按推断：
+
+- [ ] 风格（或“你决定”）
 - [ ] 风格（或“你决定”）
 - [ ] 受众（数学/科学题材）
 - [ ] 旁白语言与声音（仅旁白交付）
@@ -58,11 +64,15 @@
 
 ```bash
 node scripts/approvals.mjs init <project> --mode light
+node scripts/approvals.mjs set <project> requirements approved \
+  --duration 30s --aspect 1920x1080 --delivery narrated --note "用户确认"
 node scripts/approvals.mjs set <project> <stage> approved --note "用户确认"
 node scripts/approvals.mjs check <project>
 ```
 
-`check` 未全部 approved 时退出 1；不能跳过前置阶段；`start` 必须是用户明确授权。
+- `requirements` 必须带全三项，格式不对直接报错；**改需求会把下游重置为 pending**；
+- `check` 未全部 approved 时退出 1；不能跳过前置阶段；
+- `start` 必须是用户明确授权。
 
 ## 7. 开工指令
 

@@ -10,11 +10,11 @@
  * 用法：node scripts/test-ops.mjs
  */
 import assert from 'node:assert/strict'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { assertApproved, readApprovals } from '../lib/approvals.js'
+import { assertApproved, assertBrief, readApprovals } from '../lib/approvals.js'
 import { pluginSource } from '../lib/doctor.js'
 import { importFresh } from '../lib/fresh.js'
 import {
@@ -242,6 +242,30 @@ test('pluginSource 版本与 lib 路径自洽', () => {
   try { assertApproved(scene) } catch { blocked = true }
   if (blocked) console.log('ok   assertApproved 拒绝 pending 阶段')
   else { failed++; console.log('FAIL assertApproved 拒绝 pending 阶段') }
+
+  // 出帧门：老账本 requirements 已 approved 但没有 brief，视同未确认
+  let legacyBlocked = false
+  try { assertBrief(scene) } catch { legacyBlocked = true }
+  if (legacyBlocked) console.log('ok   assertBrief 拒绝缺 brief 的老账本')
+  else { failed++; console.log('FAIL assertBrief 拒绝缺 brief 的老账本') }
+
+  const ledger = JSON.parse(readFileSync(join(dir, 'APPROVALS.json'), 'utf8'))
+  ledger.stages.requirements = {
+    label: '需求', status: 'approved', at: null, by: 'user', note: '',
+    brief: { duration: '30s', aspect: '1920x1080', delivery: 'narrated' },
+  }
+  writeFileSync(join(dir, 'APPROVALS.json'), JSON.stringify(ledger))
+  const brief = assertBrief(scene)
+  if (brief?.brief?.delivery === 'narrated') console.log('ok   assertBrief 放行已锁定的需求')
+  else { failed++; console.log('FAIL assertBrief 放行已锁定的需求') }
+
+  // 没有账本的临时场景不拦
+  const scratch = mkdtempSync(join(tmpdir(), 'dsh-scratch-'))
+  const scratchScene = join(scratch, 'scene.py')
+  writeFileSync(scratchScene, 'pass\n')
+  if (assertBrief(scratchScene) === null) console.log('ok   assertBrief 放行临时场景')
+  else { failed++; console.log('FAIL assertBrief 放行临时场景') }
+  rmSync(scratch, { recursive: true, force: true })
 }
 
 // —— importFresh：改文件后按 mtime 重新 import（热加载的基础） ——
