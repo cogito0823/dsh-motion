@@ -16,6 +16,7 @@ import { join } from 'node:path'
 
 import { assertApproved, assertBrief, readApprovals } from '../lib/approvals.js'
 import { pluginSource } from '../lib/doctor.js'
+import { toolConfig } from '../lib/index.js'
 import { writeProjectManifest } from '../lib/project.js'
 import { importFresh } from '../lib/fresh.js'
 import {
@@ -280,6 +281,14 @@ test('pluginSource 版本与 lib 路径自洽', () => {
   rmSync(scratch, { recursive: true, force: true })
   rmSync(root, { recursive: true, force: true })
 }
+
+test('toolConfig 用会话 cwd 推导项目集，不认进程 cwd', () => {
+  const exec = { agent: { session: { cwd: '/tmp/session-x' } } }
+  assert.equal(toolConfig({}, exec).workspace, '/tmp/session-x/dsh-motion-projects')
+  assert.equal(toolConfig({ workspace: '/tmp/explicit' }, exec).workspace, '/tmp/explicit')
+  assert.deepEqual(toolConfig({}), {}, '没有会话信息时不瞎猜')
+  assert.deepEqual(toolConfig({}, {}), {})
+})
 
 test('parseFrameRate 解析 30000/1001 与 0/0', () => {
   assert.equal(parseFrameRate('30/1'), 30)

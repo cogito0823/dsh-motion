@@ -68,6 +68,7 @@ node scripts/approvals.mjs set <project> requirements approved \
   `dsh-motion-projects/<目录名>`（`MOTION_PROJECTS_HOME` 可覆盖），不建在插件包内；
   工具入参可以直接给项目目录名（`"calculus-45s"`）。正式 `motion_render` 必须有项目根；
 - **不越界**：解析只认 `dsh-motion-projects/<目录名>` 这一层，不向上找、不 legacy；
+  会话工作目录来自 `exec.agent.session.cwd`，报错里的「项目集」就是它拼出来的路径；
   子目录里的同名项目会被拒绝；`projects.mjs list|repair|rename` 管项目集；
 - **输出位置**：frames/render/probe 默认落 `<project>/out/...`，不要用 cwd 决定；
   同一项目并发由 `.dsh-motion/project.lock` 挡住；

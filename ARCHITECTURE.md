@@ -163,6 +163,9 @@ brief
 
 项目放在**会话工作目录**下的 `dsh-motion-projects/`，不挂家目录、不向上搜同名目录：
 
+> 会话工作目录来自 `exec.agent.session.cwd`，**不是**进程的 `process.cwd()`——插件进程的 cwd 是
+> `~/.dsh/profiles/<profile>`，拿它当项目集就会解析到 profile 里。工具层用 `toolConfig()` 注入。
+
 ```text
 <会话 cwd>/dsh-motion-projects/
   registry.json                 # 派生索引：可删可重建，读路径从不依赖它
