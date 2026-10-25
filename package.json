@@ -1,6 +1,6 @@
 {
   "name": "dsh-motion",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Code-generated math & science animations for DeepSeek Harness: render Manim clips, probe frames, verify formulas.",
   "license": "MIT",
   "type": "module",
