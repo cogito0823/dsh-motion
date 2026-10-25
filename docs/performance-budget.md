@@ -62,6 +62,25 @@
 - [ ] `motion_probe` 只在最终成片跑一次；
 - [ ] `--draft` 低分辨率/低帧率、分段渲染、`manimgx preview` 包装、animatic。
 
+## 基线：0.4.3（预检合并后）
+
+2026-10-25，`projects/differential-30s`（30 s / 1920×1080 / 30 fps），M3 Max，Harness 内实测：
+
+| 动作 | 调用 | 耗时 | 备注 |
+|---|---:|---:|---|
+| `motion_doctor`（冷） | 1 | 292 ms | 13 项运行时 + 字体 + 3 条公式 + 5 个 API 签名 |
+| `motion_doctor`（复跑） | 1 | 1 ms | `cached.hit: true`，age 14.4 s |
+| `motion_frames`（3 帧） | 1 | 1.4 s | `no problems in 3 samples` |
+| 读图 | 1 | — | 1 张 sheet |
+| **预检 → 第一帧** | **3** | **≈12 s** | 含复跑验证共 4 次、≈14 s |
+
+对照：同一项目的旧流程是 6 次工具调用（字体/模块 → 公式 → 冒烟渲染 → 读图 → API inspect → 读源码），Harness 计时 **1m57s**。差距在模型往返，不在子进程——预检本身只有 0.3 s。
+
+两条口径：
+
+- 缓存按运行时分文件：Harness 用 Node 24、开发 CLI 用 Node 26，指纹不同，所以各自冷启一次。跨运行时复用要去掉指纹里的 node 版本，但那样升级 Node 后的行为不可预期，暂不做；
+- 292 ms 里约 0.2 s 是 `import manimgx`，与场景复杂度无关。
+
 ## 怎么量
 
 每个项目记录：
