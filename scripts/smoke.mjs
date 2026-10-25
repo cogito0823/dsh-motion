@@ -42,6 +42,7 @@ const required = [
   'styles/3b1b/preview.jpg',
   'docs/ai-native-motion.md',
   'docs/dev-loop.md',
+  'docs/performance-budget.md',
   'README.md',
   'LICENSE',
   'NOTICE.md',

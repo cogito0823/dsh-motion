@@ -5,6 +5,15 @@ description: 代码动画的自检清单：环境、公式、画面、音频、�
 
 # 交付前自检
 
+## 0. 迭代预算
+
+- 首帧 ≤60 s；总时长 ≤400 s（30 s 片）；
+- 输出 tokens ≤30k，上下文 ≤100k；
+- 每次迭代 1 张 contact sheet，读图 ≤10 次；
+- 全文件重写 0 次；`motion_probe` 1 次、`motion_render` 2 次。
+
+详见 [performance-budget.md](../../docs/performance-budget.md)。
+
 ## 1. 环境
 
 先跑 `motion_doctor`，`ready.math` 与 `ready.delivery` 都为 true 再继续。

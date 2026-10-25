@@ -89,12 +89,13 @@ node scripts/approvals.mjs check <project>   # 未全部 approved 时退出 1
 ## 5. 执行顺序（确认后才开始）
 
 ```
-1. 场景代码 + formula_check
-2. motion_frames（3–6 帧）
+0. 最小场景：只放 6–8 个关键构图，motion_frames 出 sheet（首帧预算 ≤60s）
+1. 补全场景代码 + formula_check
+2. motion_frames（3–6 帧，局部改动后）
 3. 确认过的分镜帧（6–9 帧，若要）
-4. motion_render（mp4）
+4. motion_render（draft → final）
 5. HyperFrames composition（字幕/旁白/混音；需要时才进）
-6. hyperframes check / motion_probe（只对成片）
+6. hyperframes check / motion_probe（只对最终成片跑一次）
 ```
 
 `motion_frames` 内部是 `manimgx inspect`，只画请求的时刻并做版式检查；
@@ -106,4 +107,7 @@ node scripts/approvals.mjs check <project>   # 未全部 approved 时退出 1
 2. **没有 DESIGN.md 或参考语法，不开工**——否则每次都是同一个默认 look；
 3. **默认先帧后片**：先用 `motion_frames` 把画面改对，再决定要不要渲染；
 4. **字幕放在 composition 层**，不烧进 Manim 或 canvas；
-5. **公式先过 `formula_check`**，再进画面。
+5. **公式先过 `formula_check`**，再进画面；
+6. **首帧预算 ≤60s**：先最小场景 + 构图 sheet，60s 看不到第一帧就停；
+7. **只做局部 edit**：改动 <50% 不重写整个文件；
+8. **图片/上下文预算**：每次迭代 1 张 sheet（约 960px），上下文 ≤100k。
