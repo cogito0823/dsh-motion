@@ -128,6 +128,25 @@ npx hyperframes@0.8.193 render <project> -o out.mp4 --quality delivery
 | `ffprobe` 缺失 | 只装了 ffmpeg | 装完整 FFmpeg，插件会退回 `ffmpeg -i` 解析 |
 | 抽帧全黑 | 片头/片尾空镜 | 用 `tpad=stop_mode=clone` 补帧，或剪掉 |
 
+## 发版（维护者）
+
+首次发布会把名字与 2FA 绑好；之后用 GitHub Actions 的 Trusted Publishing，不需要 token，也不需要 OTP。
+
+1. 在 npm 包设置里绑定可信发布者：**Package → Settings → Trusted Publisher → GitHub Actions**
+   - owner: `cogito0823`
+   - repository: `dsh-motion`
+   - workflow: `release.yml`
+2. 然后：
+
+```bash
+npm version patch          # 0.1.0 -> 0.1.1
+git push --follow-tags     # 触发 release.yml
+```
+
+工作流会校验 tag 与 `package.json` 一致、跑 check/smoke，再 `npm publish --provenance`。
+
+若工作流失败，退回手动发布：`npm publish --access public`（需 passkey 或 OTP）。
+
 ## 许可
 
 MIT（见 `LICENSE`）。第三方依赖与调用关系见 `NOTICE.md`。
