@@ -1,0 +1,11 @@
+{
+  "slug": "swiss-motion",
+  "en": "Swiss Motion Graphics",
+  "cn": "瑞士动态排版",
+  "category_en": "Graphic & Type",
+  "category_cn": "图形与排版",
+  "uses": ["Brand identity", "Events", "Design education"],
+  "source": "https://github.com/lemomo-ai/lemo-opuscar/tree/main/styles/swiss-motion",
+  "license": "style doc MIT; demo stills CC BY 4.0 (LemoLab)",
+  "implementation": "manimgx (theme.py + tokens.json)"
+}

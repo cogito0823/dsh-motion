@@ -10,11 +10,21 @@
  * 用法：node scripts/test-ops.mjs
  */
 import assert from 'node:assert/strict'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { pluginSource } from '../lib/doctor.js'
-import { isBlankFrame, normalizePost, parseSignalStats, summarizeRender, tileGrid } from '../lib/ops.js'
+import { importFresh } from '../lib/fresh.js'
+import {
+  isBlankFrame,
+  normalizePost,
+  normalizeTimes,
+  parseInspectOutput,
+  parseSignalStats,
+  summarizeRender,
+  tileGrid,
+} from '../lib/ops.js'
 
 let failed = 0
 
@@ -153,10 +163,44 @@ test('isBlankFrame 认得出纯黑与纯白', () => {
 })
 
 test('isBlankFrame 不误杀正常画面', () => {
-  // 暗场风格：黑底 16 + 亮线 235，是最常见的正常帧
+  // 深色画面：黑底 16 + 亮线 235，是最常见的正常帧
   assert.equal(isBlankFrame({ ymin: 16, yavg: 30, ymax: 235 }), false)
   assert.equal(isBlankFrame({ ymin: 16, yavg: 120, ymax: 200 }), false)
   assert.equal(isBlankFrame({}), false)
+})
+
+// —— 极简模式：解析 manimgx inspect 的输出，只出帧不编码 ——
+const INSPECT_FIXTURE = `/tmp/scene.py: T, 3.70 s, 3 plays
+storyboard: /tmp/sheet.png, /tmp/sheet-2.png
+  #0   0.00– 1.20s  scene.py:13  Create(Axes)
+layout: 1 problem
+  [1] t=0.3–1.5s (scene.py:5)  t (Text '长标题'): 1.48 past the right edge
+`
+
+test('parseInspectOutput 读出片名/时长/多张 sheet 与 layout 问题', () => {
+  const parsed = parseInspectOutput(INSPECT_FIXTURE)
+  assert.equal(parsed.scene, 'T')
+  assert.equal(parsed.durationSec, 3.7)
+  assert.equal(parsed.plays, 3)
+  assert.deepEqual(parsed.storyboard, ['/tmp/sheet.png', '/tmp/sheet-2.png'])
+  assert.equal(parsed.layoutOk, false)
+  assert.equal(parsed.layoutProblems.length, 1)
+  assert.match(parsed.layoutProblems[0], /past the right edge/)
+})
+
+test('parseInspectOutput 认 0 problem 与空输出', () => {
+  const ok = parseInspectOutput('scene.py: T, 1.00 s, 1 play\nstoryboard: a.png\nlayout: no problems in 4 samples\n')
+  assert.equal(ok.layoutOk, true)
+  assert.deepEqual(ok.layoutProblems, [])
+  assert.equal(parseInspectOutput('').scene, null)
+})
+
+test('normalizeTimes 只放行秒数与 end', () => {
+  assert.deepEqual(normalizeTimes(['1.5', 'end', 2]), ['1.5', 'end', '2'])
+  assert.deepEqual(normalizeTimes(undefined), [])
+  assert.throws(() => normalizeTimes(['-1']))
+  assert.throws(() => normalizeTimes(['abc']))
+  assert.throws(() => normalizeTimes(Array.from({ length: 25 }, (_, i) => String(i))))
 })
 
 // —— pluginSource：报的就是当前这份代码 ——
@@ -168,6 +212,24 @@ test('pluginSource 版本与 lib 路径自洽', () => {
   assert.ok(existsSync(join(source.lib, 'index.js')))
   assert.ok(existsSync(join(source.lib, 'doctor.js')))
 })
+
+// —— importFresh：改文件后按 mtime 重新 import（热加载的基础） ——
+{
+  const dir = mkdtempSync(join(tmpdir(), 'dsh-fresh-'))
+  const file = join(dir, 'mod.mjs')
+  const url = new URL(`file://${file}`)
+  writeFileSync(file, 'export const value = 1\n')
+  const first = await importFresh(url)
+  writeFileSync(file, 'export const value = 2\n')
+  utimesSync(file, new Date(), new Date(Date.now() + 2000))
+  const second = await importFresh(url)
+  if (first.value === 1 && second.value === 2) {
+    console.log('ok   importFresh 按 mtime 重新加载')
+  } else {
+    failed++
+    console.log('FAIL importFresh 按 mtime 重新加载')
+  }
+}
 
 if (failed > 0) {
   console.error(`\n${failed} test(s) failed`)

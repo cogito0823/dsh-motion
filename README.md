@@ -8,29 +8,53 @@
 **代码生成的数学 / 科普动画**，给 [DeepSeek Harness](https://github.com/deepseek-ai) 用的插件。
 画面由代码逐帧生成，不经过任何文生视频（text-to-video）模型。
 
-提供四个工具：
+提供五个工具：
 
 | 工具 | 作用 |
 |---|---|
+| `motion_frames` | **极简模式（默认）**：直接从场景出帧，不生成视频、不用 HF；几秒拿到 storyboard PNG 与 layout 问题 |
 | `motion_doctor` | 环境自检（Node / FFmpeg / Python venv / manimgx / sympy / Chrome / HyperFrames） |
 | `motion_render` | 渲染 Manim / manimgx 场景，可加运动模糊、颗粒、暗角、调色 |
-| `motion_probe` | 抽帧拼 contact sheet，报告全黑 / 过曝的空镜 |
+| `motion_probe` | 成片抽帧拼 contact sheet，报告全黑 / 过曝的空镜 |
 | `formula_check` | 用 SymPy 判断两个表达式是否恒等 |
 
 外加三个技能：`animation-router`（题材路由）、`design-spec`（写 DESIGN.md）、`qa-rubric`（交付自检）。
 
-## 默认风格
+## 两种模式
 
-本仓库的默认视觉语言是 **暗场编辑（dark-editorial）**：近黑蓝底、暖白墨色、灰蓝结构线、单一琥珀强调色。
+| | 极简模式（默认） | 交付模式 |
+|---|---|---|
+| 画面来源 | `motion_frames`：按时间点直接出 PNG | `motion_render` → MP4 → HyperFrames 合成 |
+| 是否需要 HF | 不需要 | 需要（字幕、旁白、混音、编码） |
+| 检查方式 | 看帧（读图），没有"渲染完再抽帧" | `motion_probe` / `hyperframes check` |
+| 典型耗时 | 2–6 秒/次 | 数秒–数十秒；HF 合成为分钟级 |
+| 什么时候用 | 写场景、调节奏、改版式 | 定稿后出片 |
 
-- 规范：[`styles/dark-editorial/STYLE.md`](styles/dark-editorial/STYLE.md)
-- Tokens：[`styles/dark-editorial/tokens.json`](styles/dark-editorial/tokens.json)
-- Python 工具：[`styles/dark-editorial/theme.py`](styles/dark-editorial/theme.py)
-- 参考帧：[`styles/dark-editorial/preview.jpg`](styles/dark-editorial/preview.jpg)
+先出帧、改到满意，再决定要不要渲染成片。`motion_probe` 是给已经存在的视频做体检的，不是默认步骤。
 
-参考片源码在 `episodes/euler/`（欧拉公式）和 `episodes/derivative/`（导数：割线如何变成切线），沿用同一套版式。成片 mp4 体积大，**不随仓库分发**，按各集 `README.md` 的「重建」命令本地渲染。
+## 风格库
 
-新片在 `episodes/<slug>/DESIGN.md` 头部写 `style: dark-editorial@1.0.0`；需要换语言时在分集文件里覆盖。
+默认 **瑞士动态排版（swiss-motion）**；另外两套按题材选。全部改编自 [Lemo-Opuscar](https://github.com/lemomo-ai/lemo-opuscar)（MIT），不是自创。
+
+| 风格 | 适合 | 规范 |
+|---|---|---|
+| `swiss-motion`（默认） | 公式、定义、数据结论 | [STYLE](styles/swiss-motion/STYLE.md) · [tokens](styles/swiss-motion/tokens.json) |
+| `dataviz` | 趋势、比较、分布、科学数据 | [STYLE](styles/dataviz/STYLE.md) · [tokens](styles/dataviz/tokens.json) |
+| `blueprint` | 几何证明、结构、尺寸关系 | [STYLE](styles/blueprint/STYLE.md) · [tokens](styles/blueprint/tokens.json) |
+
+**参考与示例统一用 HyperFrames 的库**：[examples](https://hyperframes.heygen.com/examples)、[catalog](https://hyperframes.heygen.com/catalog)、[frame.md](https://hyperframes.heygen.com/prompting/design-systems)。本仓库不再内置样片/分集；`showcase/` 只放可复现的演示。
+
+项目 `DESIGN.md` 头部写 `style: swiss-motion` + `style_version: 1.0.0`。风格来源、HF 集成、抽帧能力与 Lemo 调研见 [docs/ai-native-motion.md](docs/ai-native-motion.md)。
+
+## 演示
+
+三个类别各一支 10 秒内短片，记录出帧/渲染耗时：
+
+- 公式：[showcase/swiss-euler](showcase/swiss-euler)
+- 数据：[showcase/dataviz-secant](showcase/dataviz-secant)
+- 几何：[showcase/blueprint-pythagoras](showcase/blueprint-pythagoras)
+
+汇总见 [showcase/README.md](showcase/README.md)。
 
 ## 安装
 
@@ -52,10 +76,10 @@ motion_doctor
 | 依赖 | 是否必需 | 说明 |
 |---|---|---|
 | Node.js ≥ 22 | 必需 | `engines` 声明 |
-| FFmpeg + ffprobe | 必需 | 渲染与后期；不随包分发 |
-| Python 3 + venv | 数学功能需要 | `manimgx`、`sympy` |
-| Chrome | 成片渲染需要 | HyperFrames 优先复用系统 Chrome |
-| HyperFrames 0.8.193 | 成片需要 | `npx hyperframes@0.8.193`，不随包分发 |
+| Python 3 + venv | 数学功能需要 | `manimgx`、`sympy`；极简出帧只需这一项 |
+| FFmpeg + ffprobe | 成片/探针需要 | 后期与抽帧；出帧不需要；不随包分发 |
+| Chrome | 用了 HF 才需要 | HyperFrames 优先复用系统 Chrome |
+| HyperFrames | 交付模式需要 | `npx hyperframes`，不随包分发 |
 
 ### 准备 Python 环境
 
@@ -98,18 +122,20 @@ class Derivative(Scene):
         self.wait(1)
 ```
 
-### 2. 渲染
+### 2. 先出帧（默认，不需要 HF）
+
+```jsonc
+// motion_frames
+{ "file": "/abs/path/scenes/derivative.py", "times": ["1.2", "4.5", "end"] }
+```
+
+返回 `storyboard` PNG 路径与 layout 问题清单（实测 3–4 帧约 3–5 秒）。看图改场景，不满意就再来一轮；这一步不生成 mp4，也不需要 HyperFrames。
+
+### 3. 需要成片时再渲染
 
 ```jsonc
 // motion_render
-{ "file": "/abs/path/scenes/derivative.py", "scene": "Derivative", "width": 1920, "height": 1080, "fps": 30 }
-```
-
-### 3. 自检
-
-```jsonc
-// motion_probe
-{ "video": "/abs/path/scenes/derivative.mp4", "frames": 12 }
+{ "file": "/abs/path/scenes/derivative.py", "scene": "Derivative", "width": 1920, "height": 1080, "fps": 60 }
 ```
 
 ### 4. 公式先验
@@ -121,13 +147,19 @@ class Derivative(Scene):
 
 ## 和 HyperFrames 的关系
 
-本插件**不是**渲染框架。成片（合成、字幕、音频混流、编码）交给 HyperFrames：
+本插件**不是**渲染框架，只产出画面素材；合成、字幕、旁白、混音、编码交给 HyperFrames：
 
 ```bash
-npx hyperframes@0.8.193 init <project> --example swiss-grid --video <clip>.mp4
-npx hyperframes@0.8.193 check <project>
-npx hyperframes@0.8.193 render <project> -o out.mp4 --quality delivery
+npx hyperframes init my-video
+npx hyperframes add data-chart          # 约 450 个现成 block / component
+npx hyperframes check                   # 运行时、版式、对比度
+npx hyperframes render -o out.mp4
 ```
+
+- **风格契约**：HF 用 `frame.md`（`DESIGN.md` 的超集）做 brand truth；本仓库的 `DESIGN.md` / `styles/<name>/` 是同一套思路的轻量版，两边可以互读。
+- **参考库**：不要把参考片塞进本仓库；直接看 HF 的 [examples](https://hyperframes.heygen.com/examples)、[catalog](https://hyperframes.heygen.com/catalog) 和 [frame.md templates](https://hyperframes.dev/design)。
+- **分工**：manimgx 负责公式/坐标/几何这类确定性画面；HF 负责排版、图文、字幕、音频与交付。
+- **HF 不必先出片再截图**：`npx hyperframes snapshot <project> --at 2.9,10.4` 直接抓指定时刻的 PNG；`--frames 10 --review` 出 contact sheet；只有要完整序列时才 `render --format png-sequence`。
 
 字幕建议“一份 transcript 出两个产物”：烧录进画面 + 独立 `.srt`。
 
@@ -137,6 +169,7 @@ npx hyperframes@0.8.193 render <project> -o out.mp4 --quality delivery
 |---|---|---|
 | `找不到 Python 虚拟环境` | 未建 venv | 按上文创建，并 `pip install manimgx sympy` |
 | `找不到渲染器: …/manimgx` | venv 里没装 | `pip install manimgx` |
+| `motion_frames` 报 layout 问题 | 压字 / 出画 / 字号过小 | 按返回的 `[n]` 逐条改场景；退出码 1 是“有问题”，不是崩溃 |
 | 渲染断字 / 字体回退 | 字体未声明 `@font-face` | 把 `.woff2` 放工程 `assets/fonts/` 并声明 |
 | `ffprobe` 缺失 | 只装了 ffmpeg | 装完整 FFmpeg，插件会退回 `ffmpeg -i` 解析 |
 | 抽帧全黑 | 片头/片尾空镜 | 用 `tpad=stop_mode=clone` 补帧，或剪掉 |
@@ -149,6 +182,13 @@ npx hyperframes@0.8.193 render <project> -o out.mp4 --quality delivery
 
 一句话版本：插件管理器里**卸载** `dsh-motion` → **安装本地目录** `/path/to/dsh-motion` → `⌘⇧R` 重启；
 之后 `motion_doctor` 第一行的「插件来源」会直接说明当前跑的是本地 checkout 还是 npm 安装。
+
+日常改代码**不需要重装**：link 安装一次后，改 `lib/ops.js` / `lib/doctor.js` 会在下一次工具调用时按 mtime 热加载；只有改工具名/参数 schema 才需要 `⌘⇧R`。风格、`tokens.json`、场景文件本来就是运行时读取，不用重启。详见 [docs/dev-loop.md](docs/dev-loop.md)，也可以完全绕开 Harness：
+
+```bash
+node scripts/dev.mjs frames showcase/swiss-euler/scene.py 1,3,end
+node scripts/dev.mjs render showcase/swiss-euler/scene.py --fps 30
+```
 
 ## 发版（维护者）
 

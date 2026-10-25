@@ -14,13 +14,24 @@ const required = [
   'lib/ops.js',
   'lib/env.js',
   'lib/doctor.js',
+  'lib/fresh.js',
   'skills/animation-router/SKILL.md',
   'skills/design-spec/SKILL.md',
   'skills/qa-rubric/SKILL.md',
-  'styles/dark-editorial/STYLE.md',
-  'styles/dark-editorial/tokens.json',
-  'styles/dark-editorial/theme.py',
-  'styles/dark-editorial/preview.jpg',
+  'styles/swiss-motion/STYLE.md',
+  'styles/swiss-motion/tokens.json',
+  'styles/swiss-motion/theme.py',
+  'styles/swiss-motion/preview.jpg',
+  'styles/dataviz/STYLE.md',
+  'styles/dataviz/tokens.json',
+  'styles/dataviz/theme.py',
+  'styles/dataviz/preview.jpg',
+  'styles/blueprint/STYLE.md',
+  'styles/blueprint/tokens.json',
+  'styles/blueprint/theme.py',
+  'styles/blueprint/preview.jpg',
+  'docs/ai-native-motion.md',
+  'docs/dev-loop.md',
   'README.md',
   'LICENSE',
   'NOTICE.md',
@@ -35,18 +46,20 @@ for (const rel of required) {
 
 const mod = await import(join(root, 'lib/index.js'))
 console.log(`${mod.name === 'motion' ? 'ok  ' : 'FAIL'} exports name=${mod.name}`)
+
+const ops = await import(join(root, 'lib/ops.js'))
+const framesOk = typeof ops.inspectFrames === 'function' && typeof ops.parseInspectOutput === 'function'
+console.log(`${framesOk ? 'ok  ' : 'FAIL'} frames-first: motion_frames helpers exported`)
+if (!framesOk) failed++
 console.log(`${typeof mod.apply === 'function' ? 'ok  ' : 'FAIL'} exports apply()`)
 if (mod.name !== 'motion' || typeof mod.apply !== 'function') failed++
 
-const styleTokens = JSON.parse(
-  readFileSync(join(root, 'styles/dark-editorial/tokens.json'), 'utf8'),
-)
-const styleOk =
-  styleTokens.name === 'dark-editorial' && styleTokens.version === '1.0.0'
-console.log(
-  `${styleOk ? 'ok  ' : 'FAIL'} style tokens: ${styleTokens.name}@${styleTokens.version}`,
-)
-if (!styleOk) failed++
+for (const slug of ['swiss-motion', 'dataviz', 'blueprint']) {
+  const tokens = JSON.parse(readFileSync(join(root, 'styles', slug, 'tokens.json'), 'utf8'))
+  const ok = tokens.name === slug && tokens.version === '1.0.0'
+  if (!ok) failed++
+  console.log(`${ok ? 'ok  ' : 'FAIL'} style tokens: ${tokens.name}@${tokens.version}`)
+}
 
 const { doctor } = await import(join(root, 'lib/doctor.js'))
 const report = await doctor({})

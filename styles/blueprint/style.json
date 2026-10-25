@@ -1,0 +1,11 @@
+{
+  "slug": "blueprint",
+  "en": "Blueprint",
+  "cn": "蓝图 / 工程制图",
+  "category_en": "Graphic & Type",
+  "category_cn": "图形与排版",
+  "uses": ["Engineering", "Hardware launches", "Tech explainers"],
+  "source": "https://github.com/lemomo-ai/lemo-opuscar/tree/main/styles/blueprint",
+  "license": "style doc MIT; demo stills CC BY 4.0 (LemoLab)",
+  "implementation": "manimgx (theme.py + tokens.json)"
+}

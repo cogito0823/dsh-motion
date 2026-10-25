@@ -52,15 +52,34 @@ spacing: { margin: 140, rule: 2 }
 - 具体到某类图版、某支片、某个年代的印刷品
 ```
 
-## 四种已验证的语言
+## 先出三张风格帧
+
+DESIGN.md 写完不等于风格成立。挑 3 个关键时刻（开场、转折、结论），用**真实绘制代码**出帧，对照 spec 检查：
+
+- 用 `motion_frames` 直接出帧，不渲染视频；
+- 三张里至少一张是 signature shot；
+- 两轮还不对，就换更接近的参考语法，而不是继续调参。
+
+## 六种已验证的语言
 
 | 语言 | 适合 | 关键手段 |
 |---|---|---|
 | 纸感植物图版 | 生物 / 博物 | 纸纤维、水洗叠色、墨线、引线标注 |
 | 暗场发光 | 物理 / 天文 / 微观 | 近黑底、细线辉光、粒子、颗粒 + 暗角 |
 | 编辑排版 | 数学 / 数据 / 概念 | 网格、字阶、单一强调色 |
-| 暗场编辑 | 数学 / 数据 / 概念 | 近黑底、细线、单一琥珀强调色、双栏编辑版式 |
+| 瑞士动态排版 | 公式 / 概念 | 12 栏网格、单一信号色、精确缓动 |
+| 数据叙事 | 数据 / 科学 | 图表操作即转场、注释钉在数据上、蓝红语义 |
+| 蓝图工程制图 | 几何 / 工程 | 青晒纸、白线、制图顺序、一次红印章 |
 
-本仓库的默认实现是 [`styles/dark-editorial/`](../../styles/dark-editorial/)：
-规范在 `STYLE.md`，数值在 `tokens.json`，`theme.py` 提供 `apply_config()` 与
-`backdrop()`。新片默认继承，分集 `DESIGN.md` 里写 `style: dark-editorial@1.0.0`。
+本仓库现有三套，全部改编自 [Lemo-Opuscar](https://github.com/lemomo-ai/lemo-opuscar)（MIT）：
+
+- [`styles/swiss-motion/`](../../styles/swiss-motion/)：公式/排版，默认；
+- [`styles/dataviz/`](../../styles/dataviz/)：图表/数据；
+- [`styles/blueprint/`](../../styles/blueprint/)：几何/工程。
+
+规范在 `STYLE.md`，数值在 `tokens.json`，`theme.py` 提供 `apply_config()` 与 `backdrop()`。
+项目 `DESIGN.md` 里写 `style: swiss-motion`（或 `dataviz` / `blueprint`）与 `style_version: 1.0.0`。
+
+参考与示例统一从 HyperFrames 取：[examples](https://hyperframes.heygen.com/examples)、
+[catalog](https://hyperframes.heygen.com/catalog)、[frame.md](https://hyperframes.heygen.com/prompting/design-systems)。
+本仓库不再内置分集/样片。

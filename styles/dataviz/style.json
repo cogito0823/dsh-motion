@@ -1,0 +1,11 @@
+{
+  "slug": "dataviz",
+  "en": "Data Storytelling",
+  "cn": "数据叙事",
+  "category_en": "Information & Keynote",
+  "category_cn": "信息与发布",
+  "uses": ["Data journalism", "Reports", "Climate & science"],
+  "source": "https://github.com/lemomo-ai/lemo-opuscar/tree/main/styles/dataviz",
+  "license": "style doc MIT; demo stills CC BY 4.0 (LemoLab)",
+  "implementation": "manimgx (theme.py + tokens.json)"
+}

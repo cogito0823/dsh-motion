@@ -56,7 +56,7 @@ node -p "require(process.env.HOME+'/.dsh/profiles/desktop/package.json').depende
 # 期望：带 -> 箭头 = 本地；真实目录 = npm
 ls -ld ~/.dsh/profiles/desktop/node_modules/dsh-motion
 
-# 期望：最后一条 registered 4 tools 是刚才重启的时间
+# 期望：最后一条 registered 5 tools 是刚才重启的时间
 tail -2 ~/.dsh/logs/motion.log
 ```
 
@@ -68,6 +68,14 @@ tail -2 ~/.dsh/logs/motion.log
 ```
 
 （Node 会把符号链接解析成真实路径，所以 link 安装显示的是仓库路径。）
+
+## 3.5 日常开发（不用反复重启）
+
+- 只改 `lib/ops.js` / `lib/doctor.js`：下一次工具调用按 mtime 热加载，不用重启；
+- 改 `styles/*`、`showcase/*`、`tokens.json`：运行时读取，不用重启；
+- 改工具名 / 描述 / 参数 schema（`lib/index.js`）：需要 `⌘⇧R`；
+- 完全绕开 Harness：`node scripts/dev.mjs frames|render|probe|doctor ...`；
+- 细节与限制见 [docs/dev-loop.md](docs/dev-loop.md)。
 
 ## 4. 兜底：插件管理器不收目录时
 

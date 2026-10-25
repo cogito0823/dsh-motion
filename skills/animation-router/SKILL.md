@@ -20,21 +20,27 @@ description: 做代码动画/科普视频的总入口：先判题材（关系还
 | Canvas 2D 逐帧 | 光、影、粒子、材质、转场 | 文字排版成本高 |
 | HTML / SVG | 排版、图文、简单图示 | 做不出辉光与颗粒 |
 
-三者都只是素材层；**交付统一在 HyperFrames 工程里完成**。
+三者都只是素材层；**需要交付时**再统一进 HyperFrames 工程，默认的极简模式不经过 HF。
 
-## 3. 固定顺序
+## 3. 固定顺序（默认极简，先帧后片）
 
 ```
-1. DESIGN.md（design spec）  ← 先定颜色/字体/禁用项
-2. 分镜表（storyboard）      ← 拍/秒/画面/旁白/验收点，先给用户确认
-3. 画面
-4. hyperframes check          ← 0 error 才算过
-5. motion_probe               ← 抽 12 帧看空镜/叠字
-6. 旁白 + 字幕 + −14 LUFS
+1. DESIGN.md（design spec）      ← 先定颜色/字体/禁用项/参考
+2. formula_check（数学题材）      ← 每条上屏公式先验
+3. 画面 + motion_frames           ← 默认：按秒出 3–6 帧，看帧改，不渲染视频
+4. 分镜表（仅用户要时）            ← 关键镜头，用真实代码出帧，等确认
+5. motion_render                  ← 定稿后才编码 mp4
+6. HyperFrames composition        ← 字幕/旁白/混音/排版（需要时才进）
+7. hyperframes check / motion_probe ← 只检查已经生成的成片
 ```
 
-## 4. 三条硬规则
+**默认不使用 HyperFrames**：只有需要字幕、旁白、混音、复杂图文编排时才进第 6 步。
+`motion_frames` 内部是 `manimgx inspect`，只画请求的时刻并做版式检查，几秒出图；
+`motion_probe` 是给已有 mp4 做体检的，不要用它替代看帧。
+
+## 4. 四条硬规则
 
 1. **没有 DESIGN.md 或参考语法，不开工**——否则每次都是同一个默认 look；
-2. **字幕放在 composition 层**，不烧进 Manim 或 canvas；
-3. **公式先过 `formula_check`**，再进画面。
+2. **默认先帧后片**：先用 `motion_frames` 把画面改对，再决定要不要渲染；
+3. **字幕放在 composition 层**，不烧进 Manim 或 canvas；
+4. **公式先过 `formula_check`**，再进画面。
