@@ -48,6 +48,8 @@
 
 路由是显式的：`node scripts/route-style.mjs "<题材>"`（点名优先 → registry 打分 → 默认 `swiss-motion`；分数并列/为 0 时要求确认）。规则在 [styles/registry.json](styles/registry.json)。
 
+开工前先过需求卡点：`npm run plan -- "竖屏抖音，讲导数，要旁白"`，会推断画幅、交付、风格的候选项，再交给 `ask_user_question`；能推断的不问。
+
 项目 `DESIGN.md` 头部写 `style: <slug>` + `style_version: 1.0.0`。风格来源、HF 集成、抽帧能力与 Lemo 调研见 [docs/ai-native-motion.md](docs/ai-native-motion.md)。
 
 ## 演示

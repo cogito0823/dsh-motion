@@ -150,15 +150,7 @@ DESIGN.md
 - 需要交付时才升级到 `motion_render` / HF；
 - 成片检查（`motion_probe`）只在已经有 mp4 时运行，不做"为了检查而渲染"。
 
-## 参考
-
-- [HyperFrames design systems](https://hyperframes.heygen.com/prompting/design-systems)
-- [HyperFrames examples](https://hyperframes.heygen.com/examples) · [catalog](https://hyperframes.heygen.com/catalog)
-- [HyperFrames CLI rendering](https://hyperframes.heygen.com/guides/rendering)
-- [Lemo-Opuscar](https://github.com/lemomo-ai/lemo-opuscar) · [DIRECTOR.md](https://github.com/lemomo-ai/lemo-opuscar/blob/main/DIRECTOR.md) · [TECHNIQUE.md](https://github.com/lemomo-ai/lemo-opuscar/blob/main/TECHNIQUE.md)
-- 本地 `manimgx inspect --help`（manimgx 0.1.1）
-
-## 4.5 效率：大家怎么缩短时间
+## 5. 效率：大家怎么缩短时间
 
 共识是**把检查点前移、把渲染延后**：
 
@@ -178,7 +170,7 @@ DESIGN.md
 - 关键不是"帧比视频快多少"，而是**看帧成本与片长无关**，且不经过编码、起浏览器、抽帧三次搬运；
 - 如果已经在 HF 里，用 `hyperframes snapshot` 而不是"先 render 再 ffmpeg 截图"。
 
-## 4.6 开发调试
+## 6. 开发调试
 
 服务端插件没有 HMR，但也不需要每次重装：
 
@@ -189,7 +181,24 @@ DESIGN.md
 
 细节见 [dev-loop.md](dev-loop.md)。
 
-## 4.7 风格路由：目前怎么做，通用标准是什么
+## 7. 需求卡点：先问，再猜
+
+默认流程多了一个“卡点”，避免在没有信息时自己替用户决定：
+
+```bash
+node scripts/plan-questions.mjs "<brief>" --json
+```
+
+输出可直接交给 `ask_user_question`：
+
+- **画幅**：按平台线索推断 2 个选项（抖音→9:16 / 16:9；B站→16:9 / 9:16；方图→1:1 / 16:9）；
+- **交付**：先出帧 / 静音 mp4 / 旁白+字幕，顺序由 brief 里的“旁白/静音”决定；
+- **风格**：`route-style` 的 top 3；点名风格时这道题直接省略；
+- **时长/语言**：从 brief 提取，不单独问；未回答的写进 `assumptions`。
+
+关键不是“问满四道题”，而是**能推断的不问、选项按上下文生成、问完一次就开做**。
+
+## 8. 风格路由：目前怎么做，通用标准是什么
 
 ### 本仓库
 
@@ -245,7 +254,7 @@ DESIGN.md
 - registry 的 `keywords` 需要随新题材维护；
 - 画幅/音频/复杂度字段目前只记录，还没参与硬约束（比如 9:16 未验证的风格应直接拒绝）。
 
-## 5. 现成的风格体系（2026-10 可直接采用）
+## 9. 现成的风格体系（2026-10 可直接采用）
 
 不必从零写风格文档。这个生态已经沉淀出几套公开、可复用的体系：
 
@@ -299,3 +308,11 @@ DESIGN.md
 3. 画面仍由 manimgx 画，不复制它们的 Canvas/WebGL demo 代码，只取语法与 prompt；
 4. 交付层继续交给 HF，`frame.md` 只做品牌/版式契约；
 5. 标注来源与许可：Lemo 代码/文档 MIT，demo 静帧 CC BY 4.0（署名 LemoLab）；mg-styles-15 MIT；HF Apache-2.0。
+
+## 参考
+
+- [HyperFrames design systems](https://hyperframes.heygen.com/prompting/design-systems)
+- [HyperFrames examples](https://hyperframes.heygen.com/examples) · [catalog](https://hyperframes.heygen.com/catalog)
+- [HyperFrames CLI rendering](https://hyperframes.heygen.com/guides/rendering)
+- [Lemo-Opuscar](https://github.com/lemomo-ai/lemo-opuscar) · [DIRECTOR.md](https://github.com/lemomo-ai/lemo-opuscar/blob/main/DIRECTOR.md) · [TECHNIQUE.md](https://github.com/lemomo-ai/lemo-opuscar/blob/main/TECHNIQUE.md)
+- 本地 `manimgx inspect --help`（manimgx 0.1.1）

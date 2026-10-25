@@ -21,7 +21,9 @@ HyperFrames 的 look 文档原话：**不给外部输入，相同的 brief 每�
 
 ## 先路由
 
-写 spec 之前先确定风格：`node scripts/route-style.mjs "<题材>"`。点名风格优先；没有点名就按 `styles/registry.json` 打分；`high` 才直接写，`medium`/`low` 先给用户 top 2–3 确认。
+写 spec 之前先过需求卡点：`node scripts/plan-questions.mjs "<brief>" --json`。它会推断画幅、交付、风格的候选项（选项来自 `styles/registry.json`，不是固定清单），能推断的不问。
+
+风格：点名优先；没有点名就按 `styles/registry.json` 打分；`high` 才直接写，`medium`/`low` 先给用户 top 2–3 确认。
 
 ## 最小形态
 

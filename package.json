@@ -38,10 +38,11 @@
   },
   "scripts": {
     "check": "node --check lib/index.js && node --check lib/ops.js && node --check lib/env.js && node --check lib/doctor.js",
-    "test": "node scripts/test-ops.mjs && node scripts/test-route.mjs",
+    "test": "node scripts/test-ops.mjs && node scripts/test-route.mjs && node scripts/test-plan.mjs",
     "smoke": "node scripts/smoke.mjs",
     "dev": "node scripts/dev.mjs",
     "route": "node scripts/route-style.mjs",
+    "plan": "node scripts/plan-questions.mjs",
     "styles:index": "node scripts/build-style-index.mjs",
     "styles:check": "node scripts/build-style-index.mjs --check",
     "check:meta": "node scripts/check-meta.mjs",
