@@ -46,7 +46,9 @@
 
 **参考与示例统一用 HyperFrames 的库**：[examples](https://hyperframes.heygen.com/examples)、[catalog](https://hyperframes.heygen.com/catalog)、[frame.md](https://hyperframes.heygen.com/prompting/design-systems)。本仓库不再内置样片/分集；`showcase/` 只放可复现的演示。
 
-项目 `DESIGN.md` 头部写 `style: swiss-motion` + `style_version: 1.0.0`。风格来源、HF 集成、抽帧能力与 Lemo 调研见 [docs/ai-native-motion.md](docs/ai-native-motion.md)。
+路由是显式的：`node scripts/route-style.mjs "<题材>"`（点名优先 → registry 打分 → 默认 `swiss-motion`；分数并列/为 0 时要求确认）。规则在 [styles/registry.json](styles/registry.json)。
+
+项目 `DESIGN.md` 头部写 `style: <slug>` + `style_version: 1.0.0`。风格来源、HF 集成、抽帧能力与 Lemo 调研见 [docs/ai-native-motion.md](docs/ai-native-motion.md)。
 
 ## 演示
 

@@ -19,6 +19,10 @@ HyperFrames 的 look 文档原话：**不给外部输入，相同的 brief 每�
 | 4 | 主题自身的世界 | ✅ 年代、材质、展示场景 |
 | 5 | 官方预设（preset） | ⚠️ 幻灯片语言，仅点名或做 deck 时用 |
 
+## 先路由
+
+写 spec 之前先确定风格：`node scripts/route-style.mjs "<题材>"`。点名风格优先；没有点名就按 `styles/registry.json` 打分；`high` 才直接写，`medium`/`low` 先给用户 top 2–3 确认。
+
 ## 最小形态
 
 ```markdown

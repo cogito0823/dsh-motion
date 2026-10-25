@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "default": "swiss-motion",
+  "styles": [
+    {
+      "slug": "swiss-motion",
+      "name_cn": "瑞士动态排版",
+      "uses": ["公式", "定义", "数据结论", "排版"],
+      "keywords": ["公式", "欧拉", "定理", "定义", "恒等式", "推导", "排版", "方程"],
+      "avoid": ["图表", "几何证明"],
+      "aspect": ["16:9"],
+      "fps": 30,
+      "complexity": "low",
+      "source": "Lemo-Opuscar"
+    },
+    {
+      "slug": "dataviz",
+      "name_cn": "数据叙事",
+      "uses": ["趋势", "比较", "分布", "科学数据"],
+      "keywords": ["数据", "图表", "趋势", "比较", "分布", "斜率", "切线", "割线", "函数", "变化率", "统计"],
+      "avoid": ["纯文字排版", "角色叙事"],
+      "aspect": ["16:9"],
+      "fps": 30,
+      "complexity": "low",
+      "source": "Lemo-Opuscar"
+    },
+    {
+      "slug": "blueprint",
+      "name_cn": "蓝图工程制图",
+      "uses": ["几何证明", "结构", "尺寸关系"],
+      "keywords": ["几何", "证明", "三角形", "圆", "角度", "尺寸", "工程", "结构", "作图", "勾股"],
+      "avoid": ["数据图表", "手绘"],
+      "aspect": ["16:9"],
+      "fps": 30,
+      "complexity": "medium",
+      "source": "Lemo-Opuscar"
+    },
+    {
+      "slug": "whiteboard",
+      "name_cn": "白板讲解",
+      "uses": ["科学解释", "课程", "机制说明"],
+      "keywords": ["讲解", "课程", "科学", "机制", "流程", "为什么", "原理", "物理", "化学", "生物"],
+      "avoid": ["高密度公式", "暗场"],
+      "aspect": ["16:9"],
+      "fps": 30,
+      "complexity": "medium",
+      "source": "Lemo-Opuscar"
+    },
+    {
+      "slug": "3b1b",
+      "name_cn": "3b1b 数学动画",
+      "uses": ["线代", "微积分", "概率", "神经网络"],
+      "keywords": ["向量", "矩阵", "特征值", "旋转", "复数", "单位圆", "线代", "概率", "微积分", "神经网络"],
+      "avoid": ["产品发布", "纯排版"],
+      "aspect": ["16:9"],
+      "fps": 30,
+      "complexity": "medium",
+      "source": "Manim community"
+    }
+  ]
+}

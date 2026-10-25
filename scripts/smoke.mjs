@@ -18,6 +18,7 @@ const required = [
   'skills/animation-router/SKILL.md',
   'skills/design-spec/SKILL.md',
   'skills/qa-rubric/SKILL.md',
+  'styles/registry.json',
   'styles/swiss-motion/STYLE.md',
   'styles/swiss-motion/tokens.json',
   'styles/swiss-motion/theme.py',

@@ -189,6 +189,44 @@ DESIGN.md
 
 细节见 [dev-loop.md](dev-loop.md)。
 
+## 4.7 风格路由：目前怎么做，通用标准是什么
+
+### 本仓库
+
+没有隐藏的自动路由。风格在**写作阶段**确定，分三层：
+
+1. `styles/registry.json`：机器可读的风格目录（slug、中文名、uses、keywords、avoid、画幅、复杂度）；
+2. `node scripts/route-style.mjs "<题材>"`：显式打分——点名风格 12 分，`keywords` 命中每个 3 分，`uses` 每个 2 分，命中 `avoid` 扣 2 分；
+3. `DESIGN.md` 头部 `style:` + `style_version:`：最终声明；场景代码从 `styles/<slug>/theme.py` 取 token。
+
+判定规则：
+
+- 点名（"用 3b1b"/"瑞士动态排版"）→ 直接命中，最高优先；
+- 否则打分；`high` 直接写，`medium`/`low`/并列 → 给 top 2–3 让用户确认；
+- 完全无命中 → 回退 `default`（`swiss-motion`），并说明是默认。
+
+这样路由是**可复现的**：同样的题材和 registry 得到同样的推荐，不靠模型"感觉像"。
+
+### 通用做法（没有 ISO 标准，但有事实标准）
+
+| 做法 | 代表 | 要点 |
+|---|---|---|
+| 风格索引 + 元数据 | Lemo `styles/README.md` + `style.json`；HF catalog | 每个风格有稳定 slug、中英文名、分类、`uses`；索引由元数据生成，不手写 |
+| 规范文件做声明 | HF `frame.md`；本仓库 `DESIGN.md` | frontmatter 定 hex/字体，正文定 Do/Don't；agent 先读再画 |
+| 点名优先 + 推荐 2–3 个 | Lemo `AGENTS.md` | 用户没选时给最接近的 2–3 个，不静默换风格 |
+| 打分 / 检索路由 | registry 关键词；HF `catalog --query` 语义检索 | 关键词/描述匹配，输出带理由与置信度 |
+| 人类确认门 | 本仓库 `needsConfirmation` | 低置信度、并列、冲突时不自动拍板 |
+| 版本与许可 | `style_version`、MIT/CC BY 标注 | 风格可升级、可追溯，不把 demo 当规范 |
+
+没有"W3C 风格路由标准"这种东西；能算标准的是 **design tokens**（颜色/字体/间距的可交换格式）和 **DESIGN.md / frame.md** 这类声明文件。路由本身是产品约定，关键不是算法多复杂，而是**规则显式、结果可复现、低置信度会问人**。
+
+### 目前的局限
+
+- 打分是关键词匹配，不理解语义；"导数"和"切线"可能一个命中 dataviz、一个命中 3b1b（已通过去掉 3b1b 的"导数"关键词缓解）；
+- 没做向量检索或多语言同义词；
+- registry 的 `keywords` 需要随新题材维护；
+- 画幅/音频/复杂度字段目前只记录，还没参与硬约束（比如 9:16 未验证的风格应直接拒绝）。
+
 ## 5. 现成的风格体系（2026-10 可直接采用）
 
 不必从零写风格文档。这个生态已经沉淀出几套公开、可复用的体系：
