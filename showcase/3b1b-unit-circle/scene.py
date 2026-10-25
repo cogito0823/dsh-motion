@@ -50,8 +50,8 @@ class UnitCircle(Scene):
                                                      color=GRAY, stroke_width=1.0, dash_length=0.08))
         arc = always_redraw(lambda: Arc(radius=0.48, start_angle=0, angle=max(theta.get_value(), 0.01),
                                         color=TEAL, stroke_width=2.0).move_arc_center_to(origin()))
-        cos_label = Text("cos θ", font="Menlo", font_size=18, color=YELLOW).move_to([-1.55, -0.42, 0])
-        sin_label = Text("sin θ", font="Menlo", font_size=18, color=YELLOW).move_to([-2.0, 1.12, 0])
+        legend = Text("黄：cos / sin 投影", font="Noto Sans CJK SC", font_size=18,
+                      color=YELLOW).move_to([4.55, -0.55, 0])
 
         formula = MathTex(r"e^{i\theta}=\cos\theta+i\sin\theta", font_size=54, color=TEXT)
         formula.move_to([4.55, 1.35, 0])
@@ -64,7 +64,7 @@ class UnitCircle(Scene):
         self.play(FadeIn(vector), FadeIn(dot), run_time=0.4)
         self.play(Create(arc), run_time=0.5)
         self.play(FadeIn(cos_bar), FadeIn(sin_bar), Create(cos_guide), Create(sin_guide),
-                  Write(cos_label), Write(sin_label), run_time=0.7)
+                  Write(legend), run_time=0.7)
         self.play(Write(formula), Write(note), run_time=0.8)
         self.play(theta.animate.set_value(2 * np.pi), run_time=5.0, rate_func=linear)
         self.wait(1.2)

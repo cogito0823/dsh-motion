@@ -45,7 +45,7 @@
 
 - `motion_frames` 按场景 fps 取帧，超范围给明确错误；
 - 渲染/post 强制 CFR，校验 `duration == frames / fps`；
-- storyboard 标注条不压画面；
+- storyboard 顶部 caption 条加提示（不属于画面，避免误判裁切）；
 - 中文文本禁用字符级 `Transform`，改用 Fade/Write；
 - `motion_probe` 只在最终成片跑一次；
 - `--draft` 低分辨率/低帧率、分段渲染、`manimgx preview` 包装、animatic。

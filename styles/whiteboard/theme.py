@@ -15,6 +15,9 @@ import manimgx as m
 
 TOKENS = json.loads(Path(__file__).with_name("tokens.json").read_text(encoding="utf-8"))
 
+# inspect 在 import 时读 config.frame_rate；必须放在模块层，不能只在 construct 里。
+m.config.frame_rate = int(TOKENS["motion"]["fps"])
+
 BOARD = TOKENS["colors"]["board"]
 BOARD_EDGE = TOKENS["colors"]["board_edge"]
 INK = TOKENS["colors"]["ink"]
