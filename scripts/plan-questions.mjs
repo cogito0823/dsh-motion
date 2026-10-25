@@ -3,12 +3,14 @@
  * 需求卡点：从 brief 推断该问什么、该给哪些选项。
  *
  *   node scripts/plan-questions.mjs "做一条竖屏抖音短片，讲导数，要旁白" --json
- *   node scripts/plan-questions.mjs "用 3b1b 讲矩阵" 
+ *   node scripts/plan-questions.mjs "用 3b1b 讲矩阵"
  *
- * 输出可直接喂给 ask_user_question 的 questions；选项来自当前 styles/registry.json，
- * 不是写死的风格清单。能从 brief 推断的项不重复问。
+ * 原则：能推断的不问；选项按上下文生成，不写死。
+ * 输出可直接交给 ask_user_question；最多 4 题。
  */
 import { loadRegistry, routeStyle } from './route-style.mjs'
+
+const MAX_QUESTIONS = 4
 
 const ASPECTS = {
   '16:9': {
@@ -49,38 +51,60 @@ const DELIVERY = {
 const NARRATION_WORDS = ['旁白', '配音', '讲解', '口播', '字幕', 'voiceover', 'narration', '声音']
 const SILENT_WORDS = ['静音', '无声', '不要声音', '只要画面', 'loop', '循环']
 
+const MATH_WORDS = ['数学', '公式', '导数', '几何', '概率', '微积分', '线代', '矩阵', '向量', '证明',
+  '三角', '函数', '物理', '化学', '生物', '算法', '统计', '复数', '单位圆', '欧拉']
+const AUDIENCE_WORDS = ['大众', '科普', '入门', '高中', '初中', '大学', '专业', '研究生', '论文', '工程师', '学生']
+
+const AUDIENCES = {
+  general: { label: '大众科普', description: '少符号、多比喻；先讲清"为什么"。' },
+  high: { label: '高中', description: '保留公式，控制推导密度；默认按课标。' },
+  university: { label: '大学 / 专业', description: '可以直接上定义、证明、矩阵；密度更高。' },
+}
+
 function hits(brief, words) {
   const q = brief.toLowerCase()
   return words.filter((word) => q.includes(word.toLowerCase())).length
 }
 
-function aspectQuestion(brief) {
+function aspectBlock(brief) {
   const scored = Object.keys(ASPECTS).map((key) => ({
     key,
     score: hits(brief, ASPECT_HINTS.find((h) => h.key === key)?.words ?? []),
   }))
   scored.sort((a, b) => b.score - a.score || (a.key === '16:9' ? -1 : 1))
+  const explicit = scored.filter((item) => item.score > 0)
   const top = scored[0].key
+  if (explicit.length === 1) {
+    return { assumption: top, question: null }
+  }
   const second = top === '16:9' ? '9:16' : '16:9'
   return {
-    id: 'aspect',
-    header: '画幅',
-    question: '这条片子要横屏、竖屏还是方屏？',
-    options: [top, second].map((key) => ({ ...ASPECTS[key] })),
-    defaultKey: top,
+    assumption: top,
+    question: {
+      id: 'aspect',
+      header: '画幅',
+      question: '这条片子要横屏、竖屏还是方屏？',
+      options: [top, second].map((key) => ({ ...ASPECTS[key] })),
+    },
   }
 }
 
-function deliveryQuestion(brief) {
+function deliveryBlock(brief) {
   const narration = hits(brief, NARRATION_WORDS)
   const silent = hits(brief, SILENT_WORDS)
-  const order = narration > 0 ? ['narrated', 'silent', 'frames'] : silent > 0 ? ['silent', 'frames', 'narrated'] : ['frames', 'silent', 'narrated']
+  if (narration > 0 && silent === 0) return { assumption: 'narrated', question: null }
+  if (silent > 0 && narration === 0) return { assumption: 'silent', question: null }
+  const order = narration > 0 && silent > 0
+    ? ['frames', 'silent', 'narrated']
+    : ['frames', 'silent', 'narrated']
   return {
-    id: 'delivery',
-    header: '交付',
-    question: '做到哪一步？',
-    options: order.map((key) => ({ ...DELIVERY[key] })),
-    defaultKey: order[0],
+    assumption: order[0],
+    question: {
+      id: 'delivery',
+      header: '交付',
+      question: '做到哪一步？',
+      options: order.map((key) => ({ ...DELIVERY[key] })),
+    },
   }
 }
 
@@ -97,21 +121,36 @@ function hasNamedStyle(brief, registry) {
     q.includes(style.slug.toLowerCase()) || q.includes(String(style.name_cn).toLowerCase()))
 }
 
-function styleOptions(brief, registry) {
+function styleBlock(brief, registry) {
   const routed = routeStyle(brief, registry)
   const bySlug = new Map(registry.styles.map((style) => [style.slug, style]))
   const picked = routed.ranked.filter((item) => item.score > 0).slice(0, 3)
-  if (picked.length === 0) {
+  if (hasNamedStyle(brief, registry) || picked.length === 0) {
     const fallback = bySlug.get(registry.default)
-    return {
-      defaultKey: registry.default,
-      options: [
+    const options = picked.map(({ slug, reasons }) => {
+      const style = bySlug.get(slug)
+      return {
+        label: style.slug === registry.default ? `${style.name_cn}（默认）` : style.name_cn,
+        description: `${style.uses_cn?.join('、') ?? ''}${reasons.length ? `；命中：${reasons.join('、')}` : ''}`,
+      }
+    })
+    if (picked.length === 0) {
+      options.push(
         {
           label: `${fallback.name_cn}（默认）`,
           description: `题材没有明显命中；先用默认。${fallback.uses_cn?.join('、') ?? ''}`,
         },
         { label: '让你决定（我先按默认做）', description: '不用现在选；我先按默认风格出 3 张帧，后面再换。' },
-      ],
+      )
+    }
+    return {
+      assumption: picked[0]?.slug ?? registry.default,
+      question: hasNamedStyle(brief, registry) ? null : {
+        id: 'style',
+        header: '风格',
+        question: '风格选哪个？选项是按题材推的，不是固定清单。',
+        options,
+      },
     }
   }
   const options = picked.map(({ slug, reasons }) => {
@@ -123,47 +162,89 @@ function styleOptions(brief, registry) {
   })
   if (options.length < 2) {
     const fallback = bySlug.get(registry.default)
-    if (picked[0].slug !== registry.default) {
-      options.push({
-        label: `${fallback.name_cn}（默认）`,
-        description: `保底选项；${fallback.uses_cn?.join('、') ?? ''}`,
-      })
-    } else {
-      options.push({ label: '让你决定（先按推荐做）', description: '先按推荐风格出 3 张帧，看完再换。' })
-    }
-  }
-  return { defaultKey: picked[0].slug, options }
-}
-
-export function planQuestions(brief, registry = loadRegistry()) {
-  const routed = routeStyle(brief, registry)
-  const durationSec = durationOf(brief) ?? 10
-  const aspect = aspectQuestion(brief)
-  const delivery = deliveryQuestion(brief)
-  const styles = styleOptions(brief, registry)
-  const questions = [aspect, delivery]
-  // 风格是口味选择：只要用户没点名，就给 top 选项；点名则直接跳过。
-  if (!hasNamedStyle(brief, registry)) {
-    questions.push({
-      id: 'style',
-      header: '风格',
-      question: '风格选哪个？选项是按题材推的，不是固定清单。',
-      options: styles.options,
+    options.push({
+      label: `${fallback.name_cn}（默认）`,
+      description: `保底选项；${fallback.uses_cn?.join('、') ?? ''}`,
     })
   }
   return {
+    assumption: picked[0].slug,
+    question: {
+      id: 'style',
+      header: '风格',
+      question: '风格选哪个？选项是按题材推的，不是固定清单。',
+      options,
+    },
+  }
+}
+
+function isMathTopic(brief) {
+  return hits(brief, MATH_WORDS) > 0
+}
+
+function audienceBlock(brief, aspect) {
+  if (!isMathTopic(brief) || hits(brief, AUDIENCE_WORDS) > 0) return null
+  const order = aspect === '9:16'
+    ? ['general', 'high', 'university']
+    : ['high', 'university', 'general']
+  return {
+    assumption: order[0],
+    question: {
+      id: 'audience',
+      header: '受众',
+      question: '这条片给谁看？它决定符号密度和推导长度。',
+      options: order.map((key) => ({ ...AUDIENCES[key] })),
+    },
+  }
+}
+
+function narrationBlock(brief, delivery) {
+  if (delivery !== 'narrated') return null
+  if (/english|英文|中文|chinese|双语|bilingual/i.test(brief)) return null
+  const options = [
+    { label: '中文 · 中性', description: '默认：跟随用户语言，冷静、克制。' },
+    { label: '中文 · 温和', description: '更适合科普、课程。' },
+    { label: '中文 · 有力', description: '更适合宣传、结论型短片。' },
+    { label: '英文 · 中性', description: '需要英文旁白与英文字幕。' },
+  ]
+  return {
+    assumption: { language: 'zh', voice: 'neutral' },
+    question: {
+      id: 'narration',
+      header: '旁白',
+      question: '旁白用什么语言和声音？语言默认跟随你。',
+      options,
+    },
+  }
+}
+
+export function planQuestions(brief, registry = loadRegistry()) {
+  const aspect = aspectBlock(brief)
+  const delivery = deliveryBlock(brief)
+  const style = styleBlock(brief, registry)
+  const audience = audienceBlock(brief, aspect.assumption)
+  const narration = narrationBlock(brief, delivery.assumption)
+
+  const questions = [aspect.question, delivery.question, style.question, audience?.question, narration?.question]
+    .filter(Boolean)
+    .slice(0, MAX_QUESTIONS)
+
+  const language = /english|英文/i.test(brief) ? 'en' : 'zh'
+  return {
     brief,
-    questions: questions.map(({ defaultKey, ...question }) => question),
+    questions,
     assumptions: {
-      aspect: aspect.defaultKey,
-      delivery: delivery.defaultKey,
-      style: routed.recommendation,
-      durationSec,
-      language: /english|英文/i.test(brief) ? 'en' : 'zh',
-      captions: delivery.defaultKey === 'narrated',
+      aspect: aspect.assumption,
+      delivery: delivery.assumption,
+      style: style.assumption,
+      audience: audience?.assumption ?? null,
+      narration: narration?.assumption ?? (delivery.assumption === 'narrated' ? { language, voice: 'neutral' } : null),
+      durationSec: durationOf(brief) ?? 10,
+      language,
+      captions: delivery.assumption === 'narrated',
       note: '未指定的项按 assumptions 执行；用户回答后覆盖。',
     },
-    routing: routed,
+    routing: routeStyle(brief, registry),
   }
 }
 
@@ -188,6 +269,6 @@ if (isMain()) {
       console.log(`\n[${q.header}] ${q.question}`)
       for (const option of q.options) console.log(`  - ${option.label}：${option.description}`)
     }
-    console.log(`\n默认时长: ${plan.assumptions.durationSec}s；语言: ${plan.assumptions.language}`)
+    console.log(`\n默认: ${plan.assumptions.aspect} / ${plan.assumptions.delivery} / ${plan.assumptions.style} / ${plan.assumptions.audience ?? '-'} / ${plan.assumptions.durationSec}s`)
   }
 }
