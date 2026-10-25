@@ -16,7 +16,7 @@ class SecantToTangent(Scene):
     """数据叙事：割线 Q→P，斜率从 2.50 落到 2.00。"""
 
     def construct(self):
-        apply_config(1920, 1080, 30)
+        apply_config()
         self.add(backdrop())
 
         kicker = Text("DATA STORY / 002", font=MONO, font_size=16, color=BLUE)

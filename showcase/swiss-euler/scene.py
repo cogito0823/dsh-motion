@@ -12,7 +12,7 @@ class SwissEuler(Scene):
     """欧拉公式 · 瑞士动态排版：一个结论，一条动线，一个信号色。"""
 
     def construct(self):
-        apply_config(1920, 1080, 30)
+        apply_config()
         self.add(backdrop())
 
         grid = columns(12, margin=0.55, opacity=0.30)

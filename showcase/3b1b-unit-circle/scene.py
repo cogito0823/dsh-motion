@@ -14,7 +14,7 @@ class UnitCircle(Scene):
     """3b1b 风格：先看旋转，再收束到 e^{iθ} = cosθ + i sinθ。"""
 
     def construct(self):
-        apply_config(1920, 1080, 30)
+        apply_config()
         self.add(backdrop())
 
         title = Text("旋转，就是复数乘法", font="Noto Sans CJK SC", weight=BOLD,

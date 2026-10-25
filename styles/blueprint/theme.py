@@ -15,9 +15,6 @@ import manimgx as m
 
 TOKENS = json.loads(Path(__file__).with_name("tokens.json").read_text(encoding="utf-8"))
 
-# inspect 在 import 时读 config.frame_rate；必须放在模块层，不能只在 construct 里。
-m.config.frame_rate = int(TOKENS["motion"]["fps"])
-
 TABLE = TOKENS["colors"]["table"]
 PAPER = TOKENS["colors"]["paper"]
 PAPER_LIGHT = TOKENS["colors"]["paper_light"]
@@ -27,11 +24,13 @@ STAMP = TOKENS["colors"]["stamp"]
 LAYOUT = TOKENS["layout"]
 
 
-def apply_config(width: int = 1920, height: int = 1080, fps: int = 30) -> None:
-    m.config.pixel_width = width
-    m.config.pixel_height = height
-    m.config.frame_rate = fps
-    m.config.background_color = TABLE
+def apply_config(background: str = TABLE) -> None:
+    """只设背景色；分辨率/帧率由 CLI（-r / --fps）或调用方决定。
+
+    不要在场景里写死 1920x1080/30：那会覆盖 motion_render 的 width/height/fps，
+    也是 1280x720 崩溃与 --fps 60 静默变 5s 的根因。
+    """
+    m.config.background_color = background
 
 
 def backdrop(seed: int = 11) -> m.ImageMobject:

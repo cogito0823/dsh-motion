@@ -45,8 +45,8 @@
 
 已完成：
 
-- [x] `motion_frames` 按场景 fps 取帧：各风格 `theme.py` 在模块层设置 `m.config.frame_rate`；
-- [x] post 强制 CFR，并校验成片时长（`tpad + CFR` 修正后复验）；
+- [x] 格式契约：`apply_config()` 只设背景色，不再覆盖分辨率/帧率；`motion_render` 的 `width/height/fps` 与 CLI 的 `-r/--fps` 生效；
+- [x] CFR：post 强制 CFR；所有成片按 `nb_read_frames` 对比期望帧数，少帧时用 `tpad + CFR` 补齐并复验；
 - [x] storyboard 顶部 caption 条加提示，避免误判“裁切”。
 
 明确不做：

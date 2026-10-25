@@ -18,7 +18,7 @@
 - `STYLE.md` 是**改编**，必须在上游基础上写清楚差异；不复制 demo 代码；
 - 颜色、字体、时间表、音频以 `tokens.json` 为准；版面坐标与组件配方写在 `STYLE.md`；
 - 中文文本不做字符级 `ReplacementTransform` / `Transform`（会出字形碎片）；用 Fade/Write/Indicate，换词用 FadeOut+FadeIn；
-- `theme.py` 必须在**模块 import 时**设置 `m.config.frame_rate`（不能只在 `construct` 里），否则 `manimgx inspect` 会按默认 60fps 取帧，30fps 场景的后半段会报 no frame；
+- **不要在场景/`theme.py` 里写死 1920×1080 / fps**：`apply_config()` 只设背景色；分辨率与帧率交给 `motion_render` 的 `width/height/fps` 或 CLI 的 `-r/--fps`。写死会覆盖 CLI，导致 `-r 1280x720` 崩溃、`--fps 60` 静默变 5s；
 - 路由：`styles/registry.json` 是元数据，`node scripts/route-style.mjs "<题材>"` 打分；点名优先，低置信度/并列先问用户；
 - 新片在自己的项目目录写 `DESIGN.md`，头部 `style: <slug>` + `style_version: 1.0.0`；
 - 参考与示例统一用 HyperFrames 的 [examples](https://hyperframes.heygen.com/examples) / [catalog](https://hyperframes.heygen.com/catalog)，不在仓库里放样片（`showcase/` 只放可复现的演示）。

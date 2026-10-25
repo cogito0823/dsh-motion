@@ -16,7 +16,7 @@ class WhiteboardDerivative(Scene):
     """白板讲解：割线 Q→P，斜率从 2.50 落到 2.00。"""
 
     def construct(self):
-        apply_config(1920, 1080, 30)
+        apply_config()
         self.add(backdrop())
 
         title = Text("割线为什么会变成切线", font="Chalkboard SE", font_size=40, color=INK)

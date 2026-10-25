@@ -12,7 +12,7 @@ class BlueprintPythagoras(Scene):
     """蓝图 / 工程制图：3-4-5 直角三角形，按制图顺序画出来。"""
 
     def construct(self):
-        apply_config(1920, 1080, 30)
+        apply_config()
         self.add(backdrop(), sheet(), title_block())
 
         header = Text("FIG. 1 — RIGHT TRIANGLE", font="Menlo", font_size=16, color=LINE)
