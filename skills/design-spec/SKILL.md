@@ -27,7 +27,7 @@ HyperFrames 的 look 文档原话：**不给外部输入，相同的 brief 每�
 
 ## 确认门
 
-`DESIGN.md` 和 3 张风格帧是确认门的第 4 步：先有确认过的脚本与分镜，再做视觉。用户明确说“可以开始”之前，不要写完整场景、不要渲染成片。流程见 [animation-router](../animation-router/SKILL.md) 的 §4。
+`DESIGN.md` 和 3 张风格帧属于确认门的“视觉”阶段：先有确认过的脚本与分镜，再做视觉。按 `gateMode` 分档（`light` 合并脚本+分镜，`standard` 分开，`full` 加 animatic）。用户明确说“可以开始”之前，不要写完整场景、不要渲染成片。流程与账本见 [animation-router](../animation-router/SKILL.md) 的 §4。
 
 ## 最小形态
 

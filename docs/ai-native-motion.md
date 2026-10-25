@@ -198,19 +198,29 @@ node scripts/plan-questions.mjs "<brief>" --json
 - **旁白**：只在交付为旁白、且 brief 未提“中文/英文/双语”时问；选项是语言 + 声音；
 - **时长/语言**：从 brief 提取，不单独问；未回答的写进 `assumptions`。
 
-最多 4 题。关键不是“问满四道”，而是**能推断的不问、选项按上下文生成、问完一次就开做**。
+最多 4 题。关键不是“问满四道”，而是**能推断的不问、选项按上下文生成、问完一次就开做**。同时输出 `assumptions.gateMode`：≤15s 且无旁白为 `light`，15–60s 或有旁白为 `standard`，>60s 或多段为 `full`。
 
-### 确认门（本仓库的硬规则）
+### 确认门（本仓库的硬规则，分档）
 
-需求卡点问完，**不等于开工**。之后按顺序确认：
+需求卡点问完，**不等于开工**。按体量选一档：
 
-1. 脚本/文案（旁白逐句、上屏文字、公式）；
-2. 分镜（镜头、秒数、画面、运动、字幕）；
-3. `DESIGN.md` + 3 张风格帧（只出帧）；
-4. 交付清单（尺寸、fps、时长、文件、音频、字幕）；
-5. 用户明确说“可以开始 / 开始做 / 按这个执行 / 开工”。
+| 模式 | 适用 | 阶段 |
+|---|---|---|
+| `light` | ≤15 s、无旁白 | 需求 → **脚本+分镜（合并）** → 视觉 → 开工 |
+| `standard` | 15–60 s，或有旁白 | 需求 → 脚本 → 分镜 → 视觉 → 交付 → 开工 |
+| `full` | >60 s、多段、复杂旁白 | 需求 → 脚本 → 分镜 → **animatic** → 视觉 → 交付 → 开工 |
 
-任何一步改动，回到该步重确认。以下不算开工：只对某个选项说“好”、只确认了脚本或分镜、说“看着办”但没授权执行。不确定就问一句“现在开始执行吗？”。
+确认状态落在项目里的 `APPROVALS.json`：
+
+```bash
+node scripts/approvals.mjs init <project> --mode light
+node scripts/approvals.mjs set <project> script_storyboard approved --note "用户确认"
+node scripts/approvals.mjs check <project>
+```
+
+`check` 未全部 approved 时退出 1；不能跳过前置阶段；`start` 必须是用户明确授权。
+
+**是不是太严？** 对 6 秒、无旁白的单公式短片，强制“脚本、分镜、交付清单”三份独立材料确实过重；所以 `light` 把脚本和分镜合并成一张表，保留“明确开工”这一道。对 30 秒以上或带旁白的片子，`standard` 的独立脚本/分镜是值得的；`full` 才加 animatic。
 
 模板在 [skills/animation-router/references/confirmation.md](../skills/animation-router/references/confirmation.md)。
 

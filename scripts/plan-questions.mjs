@@ -229,6 +229,8 @@ export function planQuestions(brief, registry = loadRegistry()) {
     .filter(Boolean)
     .slice(0, MAX_QUESTIONS)
 
+  const durationSec = durationOf(brief) ?? 10
+  const gateMode = durationSec > 60 ? 'full' : (delivery.assumption === 'narrated' || durationSec > 15) ? 'standard' : 'light'
   const language = /english|英文/i.test(brief) ? 'en' : 'zh'
   return {
     brief,
@@ -239,7 +241,8 @@ export function planQuestions(brief, registry = loadRegistry()) {
       style: style.assumption,
       audience: audience?.assumption ?? null,
       narration: narration?.assumption ?? (delivery.assumption === 'narrated' ? { language, voice: 'neutral' } : null),
-      durationSec: durationOf(brief) ?? 10,
+      durationSec,
+      gateMode,
       language,
       captions: delivery.assumption === 'narrated',
       note: '未指定的项按 assumptions 执行；用户回答后覆盖。',

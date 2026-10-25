@@ -53,3 +53,5 @@ npx hyperframes check
 ## 7. 交付
 
 mp4 + `.srt` + 场景源码 + `DESIGN.md` + 分镜表。
+
+开工前跑过 `node scripts/approvals.mjs check <project>`；确保 `APPROVALS.json` 里 `start` 是用户明确授权，而不是 agent 自己填的。

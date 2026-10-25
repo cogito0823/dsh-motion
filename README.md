@@ -78,6 +78,14 @@
 没听到第 6 步的明确指令，不写完整场景、不出全片。清单模板见
 [skills/animation-router/references/confirmation.md](skills/animation-router/references/confirmation.md)。
 
+按体量分档：`light`（≤15 s 无旁白：脚本+分镜合并）、`standard`（15–60 s 或旁白）、`full`（>60 s 或多段，加 animatic）。确认状态落在项目里的 `APPROVALS.json`：
+
+```bash
+npm run approvals -- init <project> --mode light
+npm run approvals -- set <project> start approved --note "用户说可以开始"
+npm run approvals -- check <project>
+```
+
 ## 安装
 
 ```bash

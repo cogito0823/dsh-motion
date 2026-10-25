@@ -76,6 +76,12 @@ test('brief 已说明画幅时不重复问', () => {
   assert.equal(p.assumptions.aspect, '16:9')
 })
 
+test('gateMode 按体量/旁白推断', () => {
+  assert.equal(vertical.assumptions.gateMode, 'standard')
+  assert.equal(planQuestions('做一条 10 秒欧拉公式，静音').assumptions.gateMode, 'light')
+  assert.equal(planQuestions('做一条 90 秒的微积分讲解').assumptions.gateMode, 'full')
+})
+
 test('brief 已说明英文旁白时不重复问', () => {
   const p = planQuestions('做一条英文旁白的导数短片')
   assert.equal(p.questions.some((q) => q.id === 'narration'), false)
