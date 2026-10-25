@@ -25,7 +25,7 @@
 | | 极简模式（默认） | 交付模式 |
 |---|---|---|
 | 画面来源 | `motion_frames`：按时间点直接出 PNG | `motion_render` → MP4 → HyperFrames 合成 |
-| 是否需要 HF | 不需要 | 需要（字幕、旁白、混音、编码） |
+| 是否需要 HF | 不需要 | 需要（字幕、编码；旁白/混音也可走本地免费路线） |
 | 检查方式 | 看帧（读图），没有"渲染完再抽帧" | `motion_probe` / `hyperframes check` |
 | 典型耗时 | 2–6 秒/次 | 数秒–数十秒；HF 合成为分钟级 |
 | 什么时候用 | 写场景、调节奏、改版式 | 定稿后出片 |
@@ -189,9 +189,63 @@ class Derivative(Scene):
 { "left": "diff(0.5*exp(x), x)", "right": "0.5*exp(x)" }
 ```
 
+## 旁白（免费路线）
+
+不依赖付费 API、不需要账号。默认用 [`edge-tts`](https://github.com/rany2/edge-tts)（微软 Edge 朗读接口的非官方封装：免费、联网、带词级时间戳）；离线兜底用 macOS `say`。
+
+一次性准备：
+
+```bash
+python3 -m venv .venv-tts
+.venv-tts/bin/pip install edge-tts numpy   # Windows: .venv-tts\Scripts\pip
+```
+
+`narration.json` 只描述文本和节拍，语音参数可以写在 `edge` 里，也可以命令行覆盖：
+
+```json
+{
+  "duration": 30,
+  "edge": { "voice": "zh-CN-XiaoxiaoNeural", "rate": "+10%" },
+  "lines": [
+    { "id": 1, "start": 0.65, "text": "先看这个函数……" }
+  ]
+}
+```
+
+生成逐句音频、词级 `timing.json` 和 `captions.srt`：
+
+```bash
+npm run narrate -- projects/foo --voice zh-CN-XiaoxiaoNeural --rate +10%
+```
+
+混音（可选音乐、自动 duck、−14 LUFS / −1 dBTP），需要时直接压进现有视频：
+
+```bash
+npm run mix -- projects/foo --music assets/bed.wav \
+  --mux out/foo.mp4 --mux-out out/foo-narrated.mp4
+```
+
+| 产物 | 内容 |
+|---|---|
+| `audio/edge/l1.mp3` | 逐句人声；按“文本 + 音色 + 参数”缓存 |
+| `audio/edge/timing.json` | 每句起止 + 词级时间 |
+| `audio/edge/captions.srt` | 与配音对齐的字幕 |
+| `audio/master.wav` | 48 kHz / 24-bit 母带 |
+| `audio/mix.json` | 响度、真峰值、duck 参数 |
+
+没有网络时：
+
+```bash
+npm run narrate -- projects/foo --provider say --voice Tingting --rate 230
+```
+
+`say` 不提供词级时间，字幕按 token 权重估算，并在 `timing.json` 标 `estimated`。Python 解释器可用 `--python` 或 `MOTION_TTS_PYTHON` 指定。
+
+> `edge-tts` 免费但非官方接口：需要联网，无 SLA；商业发行建议换 Apache 2.0 的 Fun-CosyVoice3 或真人配音。
+
 ## 和 HyperFrames 的关系
 
-本插件**不是**渲染框架，只产出画面素材；合成、字幕、旁白、混音、编码交给 HyperFrames：
+本插件**不是**渲染框架，默认只产出画面素材；成片合成、字幕、编码交给 HyperFrames。旁白与混音可以用上面的免费路线，不强制走 HF：
 
 ```bash
 npx hyperframes init my-video
@@ -202,7 +256,7 @@ npx hyperframes render -o out.mp4
 
 - **风格契约**：HF 用 `frame.md`（`DESIGN.md` 的超集）做 brand truth；本仓库的 `DESIGN.md` / `styles/<name>/` 是同一套思路的轻量版，两边可以互读。
 - **参考库**：不要把参考片塞进本仓库；直接看 HF 的 [examples](https://hyperframes.heygen.com/examples)、[catalog](https://hyperframes.heygen.com/catalog) 和 [frame.md templates](https://hyperframes.dev/design)。
-- **分工**：manimgx 负责公式/坐标/几何这类确定性画面；HF 负责排版、图文、字幕、音频与交付。
+- **分工**：manimgx 负责公式/坐标/几何这类确定性画面；HF 负责排版、图文、字幕与交付；免费旁白路线负责 TTS、时间轴与混音。
 - **HF 不必先出片再截图**：`npx hyperframes snapshot <project> --at 2.9,10.4` 直接抓指定时刻的 PNG；`--frames 10 --review` 出 contact sheet；只有要完整序列时才 `render --format png-sequence`。
 
 字幕建议“一份 transcript 出两个产物”：烧录进画面 + 独立 `.srt`。

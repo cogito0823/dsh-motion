@@ -38,12 +38,14 @@
     }
   },
   "scripts": {
-    "check": "node --check lib/index.js && node --check lib/ops.js && node --check lib/env.js && node --check lib/doctor.js && node --check lib/preflight.js && node --check lib/cache.js",
+    "check": "node --check lib/index.js && node --check lib/ops.js && node --check lib/env.js && node --check lib/doctor.js && node --check lib/preflight.js && node --check lib/cache.js && node --check scripts/narrate.mjs && node --check scripts/mix.mjs && node --check scripts/lib/audio.mjs",
     "test": "node scripts/test-ops.mjs && node scripts/test-route.mjs && node scripts/test-plan.mjs && node scripts/test-approvals.mjs && node scripts/test-preflight.mjs",
     "smoke": "node scripts/smoke.mjs",
     "dev": "node scripts/dev.mjs",
     "route": "node scripts/route-style.mjs",
     "plan": "node scripts/plan-questions.mjs",
+    "narrate": "node scripts/narrate.mjs",
+    "mix": "node scripts/mix.mjs",
     "approvals": "node scripts/approvals.mjs",
     "styles:index": "node scripts/build-style-index.mjs",
     "styles:check": "node scripts/build-style-index.mjs --check",

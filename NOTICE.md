@@ -12,6 +12,8 @@
 | [subinium/3b1b-style-animation-skill](https://github.com/subinium/3b1b-style-animation-skill) | MIT | `3b1b` 的配色与教学法来源；非 3Blue1Brown 官方项目 |
 | [adithya-s-k/manim_skill](https://github.com/adithya-s-k/manim_skill) | MIT | `3b1b` 的方法论参考（Manim 社区常用 skill） |
 | [FFmpeg](https://ffmpeg.org) | LGPL/GPL（取决于构建） | 渲染、后期、抽帧；**不打包**，由用户自行安装 |
+| [edge-tts](https://github.com/rany2/edge-tts) | LGPL-3.0 | 免费旁白（词级时间戳）；通过用户自己的 Python 环境调用，**不打包**；它调用微软 Edge 的非官方朗读接口 |
+| [Fun-CosyVoice3](https://github.com/FunAudioLLM/CosyVoice) | Apache-2.0 | 推荐的可商用离线中文 TTS 备选；**不打包** |
 
 字体不随包分发；若你的 `DESIGN.md` 指定了第三方字体，请确认其许可（OFL / 商用授权）。
 
