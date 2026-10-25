@@ -1,0 +1,40 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write # OIDC: npm Trusted Publishing, no token, no OTP
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      # 包本身零依赖；不跑 npm ci，避免缺 lockfile
+      - name: Syntax + smoke
+        run: |
+          node --version
+          npm --version
+          npm run check
+          npm run smoke
+
+      - name: Verify tag matches package.json
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          TAG=${GITHUB_REF_NAME#v}
+          if [ "$PKG" != "$TAG" ]; then
+            echo "tag $TAG != package.json $PKG"; exit 1
+          fi
+
+      - name: Publish (Trusted Publishing)
+        run: npm publish --access public --provenance
