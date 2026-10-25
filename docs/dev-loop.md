@@ -40,7 +40,7 @@ node scripts/dev.mjs probe out.mp4
 node scripts/dev.mjs doctor
 ```
 
-它直接 import `lib/ops.js`，不经过插件注册，适合调参数、量耗时、跑回归。改完再让工具层调用同一份代码。
+它直接 import `lib/ops.js`，不经过插件注册，适合调参数、量耗时、跑回归。默认输出到 `out/`（已 git 忽略），不会弄脏场景目录；`showcase/` 里是提交的展示片，测试片不要放那里。
 
 ## 方案 3：把变化关在数据里
 

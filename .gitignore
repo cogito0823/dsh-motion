@@ -12,5 +12,8 @@ check-*.png
 check.storyboard*.png
 *-contact.png
 
-# 成片与生成的音频：体积大、可本地重渲，不随仓库分发
+# 本地测试渲染产物：视频 / 帧 / 日志，不提交；展示片在 showcase/
+out/
+
+# 生成的音频：可本地重渲，不随仓库分发
 *.wav

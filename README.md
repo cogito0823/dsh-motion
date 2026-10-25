@@ -186,8 +186,8 @@ npx hyperframes render -o out.mp4
 日常改代码**不需要重装**：link 安装一次后，改 `lib/ops.js` / `lib/doctor.js` 会在下一次工具调用时按 mtime 热加载；只有改工具名/参数 schema 才需要 `⌘⇧R`。风格、`tokens.json`、场景文件本来就是运行时读取，不用重启。详见 [docs/dev-loop.md](docs/dev-loop.md)，也可以完全绕开 Harness：
 
 ```bash
-node scripts/dev.mjs frames showcase/swiss-euler/scene.py 1,3,end
-node scripts/dev.mjs render showcase/swiss-euler/scene.py --fps 30
+node scripts/dev.mjs frames showcase/swiss-euler/scene.py 1,3,end   # → out/swiss-euler-frames.png
+node scripts/dev.mjs render showcase/swiss-euler/scene.py --fps 30   # → out/swiss-euler.mp4
 ```
 
 ## 发版（维护者）
