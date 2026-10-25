@@ -4,19 +4,22 @@
  */
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { aggregateMetrics, findMetricsFiles, metricsFileOf, projectRootOf, readMetrics, recordMetric } from '../lib/metrics.js'
+import { writeProjectManifest } from '../lib/project.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const dir = mkdtempSync(join(tmpdir(), 'dsh-motion-metrics-'))
+const dir = realpathSync(mkdtempSync(join(tmpdir(), 'dsh-motion-metrics-')))
 try {
-  const project = join(dir, 'film')
+  // 项目集默认在 cwd 下：切到临时目录，避免测试写到仓库里
+  process.chdir(dir)
+  const project = join(dir, 'dsh-motion-projects', 'film')
   mkdirSync(join(project, 'out'), { recursive: true })
-  writeFileSync(join(project, 'timeline.json'), '{}')
+  writeProjectManifest(project, { name: 'film' })
 
   // 从 out/ 里的视频仍应回到项目根
   assert.equal(projectRootOf(join(project, 'out', 'clip.mp4')), project)
@@ -40,7 +43,7 @@ try {
 
   const cli = spawnSync(process.execPath, [
     join(root, 'scripts', 'run-report.mjs'), project, '--wall', '752', '--json',
-  ], { encoding: 'utf8' })
+  ], { encoding: 'utf8', cwd: dir })
   assert.equal(cli.status, 0, cli.stderr)
   const payload = JSON.parse(cli.stdout)
   assert.equal(payload.activeSec, 32.67)

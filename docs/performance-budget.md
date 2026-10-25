@@ -74,7 +74,7 @@
 - **模板**：`templates/project/` + `scripts/scaffold.mjs`；
 - **混音**：`mix --report-gaps` 输出旁白间隙 dB，低于阈值告警。
 - **项目根（0.9.0）**：`motion.project.json` + `resolveProject()`；`APPROVALS` 不再继承父目录，输出落 `<project>/out`，项目内锁防并发覆盖。
-- **审批闭环（0.9.0）**：`requirements`/`start` 绑定 `--confirmation` 与 briefHash；拒绝/绕过写 `.dsh-motion/approvals.jsonl`；工具 render 每次走 `ctx.approval.request`。
+- **审批闭环（0.9.0）**：`requirements`/`start` 绑定 `--confirmation` 与 briefHash；拒绝/绕过写 `.dsh-motion/approvals.jsonl`；工具 render 在账本未通过时走 `ctx.approval.request`（已通过则跳过并记 `ledger-approved`）。
 
 ## P1（工具）
 
@@ -99,7 +99,7 @@
 
 ## 基线：0.4.3（预检合并后）
 
-2026-10-25，`projects/differential-30s`（30 s / 1920×1080 / 30 fps），M3 Max，Harness 内实测：
+2026-10-25，`dsh-motion-projects/differential-30s`（30 s / 1920×1080 / 30 fps），M3 Max，Harness 内实测（该样例已删，数字留档）：
 
 | 动作 | 调用 | 耗时 | 备注 |
 |---|---:|---:|---|

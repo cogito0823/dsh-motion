@@ -15,7 +15,9 @@ check.storyboard*.png
 # 本地测试渲染产物：视频 / 帧 / 日志，不提交；展示片在 showcase/
 out/
 
-# 本地项目目录：生成的场景、分镜、成片，不提交
+# 本地项目集（会话工作目录下）：生成的场景、分镜、成片，不提交
+dsh-motion-projects/
+# 旧布局残留（老版本的仓库内 projects/）
 projects/
 
 # 生成的音频：可本地重渲，不随仓库分发

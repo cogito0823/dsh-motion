@@ -7,7 +7,7 @@ description: 为动画片写 DESIGN.md（设计规范）：配色、字体、间
 
 ## 从模板开始
 
-新项目先跑 `node scripts/scaffold.mjs <dest> --title "片名" --duration 30`，
+新项目先跑 `node scripts/scaffold.mjs <目录名> --title "片名" --duration 30`，
 会生成 `DESIGN.md`、`timeline.json`、`timeline.py`（`TimedScene.cue` 落后告警）、
 `scene.py`、`narration.json`、`assemble.py`。在本文件基础上改，不要从空白开始。
 

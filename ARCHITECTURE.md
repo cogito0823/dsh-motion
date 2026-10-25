@@ -101,7 +101,7 @@ venv 创建/装包由宿主进程的 motion_setup 完成，避开该沙箱。
 | `motion_doctor` | 无 | 读缓存/写缓存；spawn 探针 | 无 |
 | `motion_setup` | `force?`, `tts?` | 建/改 venv、pip 安装 | 无（宿主进程） |
 | `motion_frames` | `file`, `scene?`, `times?`, `out?` | 出 storyboard PNG；写 metrics | 有 `APPROVALS.json` 时需求必须锁定 |
-| `motion_render` | `file`, `scene?`, `engine?`, `post?`, `width/height/fps/out` | 出 MP4；CFR 归一；写 metrics | 有 manifest；工具路径每次平台审批；账本作为前置 |
+| `motion_render` | `file`, `scene?`, `engine?`, `post?`, `width/height/fps/out` | 出 MP4；CFR 归一；写 metrics | 有 manifest；账本是前置，未通过才平台审批 |
 | `motion_probe` | `video`, `frames?`, `out?` | contact sheet；写 metrics | 无 |
 | `formula_check` | `left`, `right` | 无 | 无 |
 
@@ -112,7 +112,8 @@ venv 创建/装包由宿主进程的 motion_setup 完成，避开该沙箱。
 - 工具返回结构化 JSON，不让模型 grep 日志；
 - 错误信息直接给下一步（缺 venv → `motion_setup`，缺包 → `motion_setup`）；
 - 正式 `motion_render` 同时在工具层和 `ops.js` 执行层校验 `APPROVALS.json`，并要求
-  `motion.project.json`；工具路径每次 render 都走 Harness `ctx.approval.request` 让用户逐次确认；
+  `motion.project.json`；账本已通过时直接渲染，未通过才走 Harness `ctx.approval.request`
+  （`confirmEveryRender: true` 可恢复逐次确认）；
   CLI 调试用 `--explore`，不进入交付。
 
 ---
@@ -122,12 +123,12 @@ venv 创建/装包由宿主进程的 motion_setup 完成，避开该沙箱。
 ```text
 target scene/video
   │
-  └─ resolveProject() → motion.project.json 或 legacy 根 / unmanaged
+  └─ resolveProject() → <ws>/<目录名>/motion.project.json 或 unmanaged（不 legacy）
        │
 brief
   │
   ├─ plan-questions → ask_user_question
-  ├─ approvals init/set → APPROVALS.json（requirements 必须锁 时长/画幅/交付）
+  ├─ approvals init/set → APPROVALS.json（requirements 必须锁 时长/画幅/帧率/交付/风格/受众/旁白）
   │
   ├─ skill: animation-router / design-spec / qa-rubric
   │
@@ -158,10 +159,32 @@ brief
   └─ run-report（active / wall / cacheHits）
 ```
 
+### 4.0 项目集：会话边界、深度、失败要响
+
+项目放在**会话工作目录**下的 `dsh-motion-projects/`，不挂家目录、不向上搜同名目录：
+
+```text
+<会话 cwd>/dsh-motion-projects/
+  registry.json                 # 派生索引：可删可重建，读路径从不依赖它
+  calculus-45s/
+    motion.project.json         # 身份（id）在这里
+    ...
+```
+
+三条不变量（`lib/project.js`）：
+
+1. **边界**：解析永不越过 workspace。外面的 `scene.py` 一律 `unmanaged`，报错里给出项目集路径。
+2. **深度**：项目必须是 workspace 的直接子目录。子目录里再出现的 `motion.project.json` 直接报错（不允许嵌套），不会被静默归到父项目。
+3. **失败要响**：缺 manifest、`projectId` 与账本不符、目录越界 → 都抛错并给修复命令（`projects.mjs repair|rename`），没有 legacy 回退。
+
+分工：**寻址用目录名**（单段，`{"file": "calculus-45s"}` 或绝对路径），**身份用 id**（`slug-6hex`，改名不变，绑账本），**产物返回绝对路径**。
+
+`registry.json` 只是 cache：`listProjects()` 每次扫磁盘；索引与磁盘不一致时重建，不报错。
+
 ### 4.1 项目目录约定
 
 ```text
-~/dsh-motion-projects/<slug>/    # projectsHome；插件包外
+<会话 cwd>/dsh-motion-projects/<目录名>/   # 项目集；插件包外
   motion.project.json           # 唯一项目根（提交）
   APPROVALS.json                # 确认门账本（提交）
   DESIGN.md                     # 视觉契约
@@ -186,10 +209,13 @@ brief
 
 ## 5. 不变量与关键决策
 
-项目根是 `motion.project.json`，不是 cwd、不是 `.git`、也不是父目录。`resolveProject()` 从目标
-向上找最近的 manifest；没有 manifest 时只在同一目录认 legacy 标记（`timeline.json` /
-`narration.json` / `APPROVALS.json` / `DESIGN.md` / `scene.py`）。`APPROVALS.json` 只读项目根，
-metrics 只写项目根，正式 render 必须有项目根。
+项目根是 `motion.project.json`，不是 cwd、不是 `.git`、也不是父目录。`resolveProject()` 只在
+`dsh-motion-projects/` 里找，从目标目录向上最多走到 workspace 根；越界、无 manifest、嵌套项目
+都直接报错，没有 legacy 兜底。`APPROVALS.json` 只读项目根，metrics 只写项目根，正式 render
+必须有项目根。
+
+仓库自带的 `showcase/<slug>/` 不在会话项目集里，用它们时显式指定：
+`MOTION_PROJECTS_HOME=showcase node scripts/approvals.mjs show swiss-euler`。
 
 1. **skill 由插件自己注册**，不依赖 `~/.dsh/skills`。
    `lib/skills.js` 通过 `ctx.skills.registerProvider` 提供 `motion` provider；rank 600，
@@ -243,7 +269,7 @@ metrics 只写项目根，正式 render 必须有项目根。
 | `找不到渲染器` | venv 里无 manimgx/manim | `motion_setup`（或对应 pip 手动兜底） |
 | `未找到 APPROVALS.json` / `需求未锁定` | 确认门未过 | `scripts/approvals.mjs init/set --confirmation <id>` |
 | 用户拒绝渲染 | 平台审批 rejected/cancelled | 重新过确认门；审计在 `.dsh-motion/approvals.jsonl` |
-| `未找到 motion.project.json` | 正式 render 没有项目根 | `scaffold` 或 `project-adopt`；临时调试用 `--explore` |
+| `正式渲染需要项目根` | 场景不在项目集里 | `scaffold` 新建，或 `projects.mjs repair` 补 manifest；临时调试用 `--explore` |
 | `项目被占用` | 同项目有 render/tts/mix 在写 | 等结束；确认锁已死再删 `.dsh-motion/project.lock` |
 | `timeline-check` error/warn | cue 乱序/越界、旁白晚到/压拍 | 改 `timeline.json` 或场景节奏 |
 | `[late] cue=...` | 场景实际时间落后于 cue | 减少前面动画/等待，或后移 cue |

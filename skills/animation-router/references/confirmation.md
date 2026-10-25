@@ -12,20 +12,24 @@
 
 `light` 把“脚本”和“分镜”合成一张表：每个镜头一行，写秒数、画面、上屏文字/公式。
 
-## 1. 需求（硬门）
+## 1. 需求（硬门：固定七题，一次问完）
 
-这三项必须落进 `APPROVALS.json` 的 `requirements.brief`，否则 `motion_frames` 拒绝出帧：
+七个问题、固定题数、固定顺序：受众 → 风格 → 交付 → 时长 → 画幅 → 帧率 → 旁白。
+题目来自 `node scripts/plan-questions.mjs "<brief>" --json`，一次全部交给 `ask_user_question`；
+每题第一个选项是推断出的默认项（标“推荐”）。
 
-- [ ] 时长：如 `30s`
-- [ ] 画幅：如 `1920x1080` / `1080x1920`
+全部七项必须落进 `APPROVALS.json` 的 `requirements.brief`，否则 `motion_frames` 拒绝出帧：
+
+- [ ] 受众：`high` / `university` / `general` / `intro` / `pro` / `kids`
+- [ ] 风格：registry 的 slug（或 `让你决定` → 默认 slug）
 - [ ] 交付：`frames`（先出帧）/ `silent`（静音 mp4）/ `narrated`（旁白 + 字幕，进 HF）
+- [ ] 时长：如 `30s`（默认按题材 + 交付容量推，不静默兜底）
+- [ ] 画幅：像素一并定，如 `1920x1080` / `1080x1920` / `3840x2160`
+- [ ] 帧率：`auto`（按交付推导）或 24 / 25 / 30 / 50 / 60；交付为 `frames` 时记 `N/A`
+- [ ] 旁白：`zh-neutral` / `zh-warm` / `zh-strong` / `en-neutral` / `none`（`narrated` 时不能是 `none`）
 
-以下可选项，有就给，没有按推断：
-
-- [ ] 风格（或“你决定”）
-- [ ] 风格（或“你决定”）
-- [ ] 受众（数学/科学题材）
-- [ ] 旁白语言与声音（仅旁白交付）
+答完必须回显一行：`高中 / 3b1b / 旁白+字幕 / 60s / 1920×1080 / 30fps / 中文·中性`，
+再锁账。七题同时呈现，时长默认基于推断的受众给出；用户改了受众就要复核一次时长。
 
 ## 2. 脚本 / 文案
 
@@ -55,7 +59,7 @@
 
 ## 5. 交付清单
 
-- [ ] 尺寸 / fps / 时长
+- [ ] 尺寸 / fps / 时长（与 `requirements.brief` 一致）
 - [ ] 文件：mp4 / `.srt` / 场景源码 / DESIGN.md / 分镜表
 - [ ] 音频：无 / 旁白 / 音乐；响度目标
 - [ ] 字幕：烧录 / 外挂 / 两者
@@ -65,13 +69,14 @@
 ```bash
 node scripts/approvals.mjs init <project> --mode light
 node scripts/approvals.mjs set <project> requirements approved \
-  --duration 30s --aspect 1920x1080 --delivery narrated \
+  --duration 30s --aspect 1920x1080 --fps 30fps --delivery narrated \
+  --style 3b1b --audience high --narration zh-neutral \
   --confirmation q_... --note "用户确认"
 node scripts/approvals.mjs set <project> <stage> approved --note "用户确认"
 node scripts/approvals.mjs check <project>
 ```
 
-- `requirements` 必须带全三项，格式不对直接报错；**改需求会把下游重置为 pending**；
+- `requirements` 必须带全七项（含 `--fps`；`narrated` 还要 `--narration`），格式不对直接报错；**改需求会把下游重置为 pending**；
 - `check` 未全部 approved 时退出 1；不能跳过前置阶段；
 - `start` 必须是用户明确授权。
 

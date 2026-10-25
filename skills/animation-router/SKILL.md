@@ -5,40 +5,42 @@ description: 做代码动画/科普视频的总入口：先判题材（关系还
 
 # 总入口：先分题材，再选画面层
 
-## 0. 需求卡点（硬门：先问，再落账）
+## 0. 需求卡点（硬门：七题一次问完，再落账）
 
-**时长、画幅、交付**这三项必须有个明确的来源——用户说的，或者用户点头过的推断。不能替他默认。
+**固定七题、固定题数**：每次生成都问同样七项，顺序不变——受众 → 风格 → 交付 → 时长 → 画幅 → 帧率 → 旁白。
+不按 brief 关键词增删题目，也不许只问其中几项。
 
 ```bash
 node scripts/plan-questions.mjs "<brief>" --json
 ```
 
-拿到答案先落账，没落账 `motion_frames` 会拒绝出帧：
+输出里的 `questions` 一次全部交给 `ask_user_question`（七题同一轮），每题第一个选项就是推断出的默认项
+（标“推荐”）。用户可以直接一路确认，也可以只改其中一两项。答完落账：
 
 ```bash
 node scripts/approvals.mjs set <project> requirements approved \
-  --duration 30s --aspect 1920x1080 --delivery silent \
-  --confirmation q_... --note "用户确认"   # delivery 三选一：frames / silent / narrated
+  --duration 30s --aspect 1920x1080 --fps 30fps --delivery silent \
+  --style 3b1b --audience high --narration none \
+  --confirmation q_... --note "用户确认"
 ```
 
-把返回的 `questions` 原样交给 `ask_user_question`，`assumptions` 作为默认值。
-`requirements` / `start` 的 `approved` 必须带 `--confirmation`，填 `ask_user_question` 返回的 question id；`briefHash` 由脚本自动生成，手改 brief 会被拒。规则：
+`--fps` 只收 24 / 25 / 30 / 50 / 60（或交付为 `frames` 时的 `N/A`）；分数帧率（23.976/29.97/59.94）走特例，需明说。
+`narrated` 必须给 `--narration`，且不能是 `none`。
 
-- **画幅**：brief 已说"竖屏/横屏/16:9"就不再单独出题，但落账前要在回复里回显确认；没说才问，只给推断出的 2 个；
-- **交付**：brief 已说"要旁白"或"静音"同样回显确认；没说才问；
-- **风格**：从 `styles/registry.json` 路由出的 top 2–3；用户点名则跳过；
-- **受众**：只对数学/科学题材、且 brief 没提"高中/大学/大众"时问；选项按平台排（抖音→大众科普，B站→高中）；
-- **旁白**：只在交付为旁白、且 brief 没说"中文/英文/双语"时问；选项是"语言 + 声音"；
-- **时长**：从 brief 提取（"30 秒"/"1 分钟"），不单独问；
-- 最多 4 题，问完不再追问；没回答的按 `assumptions` 执行。**问完不等于开工**，接着进 §4 确认门。
+用脚本里的 `briefFromAnswers(plan, answers)` 把七题答案折成 brief，别手工拼——它负责把“自动帧率”
+按交付解析成 `30fps` 或 `N/A`。
 
-两条底线：
+规则：
 
-- **推断 ≠ 确认**：brief 里的线索只用来生成选项和默认值。回复里要把「30 s / 1920×1080 / 成片+字幕」这类结论写出来，让用户点头或改；
-- 宁可多问一句「30 秒、横屏、带旁白，对吗？」，也不要问都没问就先出帧。
+- **题数恒为七**：brief 里已经写明的项（如“竖屏”“30 秒”“3b1b”）仍然是题目，只是默认项变成它；
+- **帧率**：默认“自动 · 按交付推导”——成片取 30 fps，`frames` 时记 `N/A`；手选只给通用整数档；
+- **旁白**：交付不是 `narrated` 时题目照问，默认项说明“这次没有音轨”，并保留 `不需要旁白`；
+- **时长**：默认值按题材 + 交付容量推（旁白约 3.5–4.5 字/秒），不再静默兜底；
+- 七题同时呈现时，时长默认是按“推断的受众/交付”给的；用户在同一轮改了受众，答完要复核时长是否还合适；
+- 问完不等于开工，接着进 §4 确认门。
 
-选项是**推出来的**，不是固定清单：画幅看平台线索，交付看有无旁白，风格看 registry 命中，受众看题材与平台。
-用户也可以直接在 `Other` 里写别的。
+**回显（必做）**：答完把七项折成一行写出来——“高中 / 3b1b / 旁白+字幕 / 60s / 1920×1080 / 30fps / 中文·中性 / standard”——
+让用户有最后一次说“不对”的机会。推断不等于确认，但没有回显的确认等于没确认。
 
 ## 0.5 环境预检：跑一次，别再拆
 
@@ -62,9 +64,11 @@ node scripts/approvals.mjs set <project> requirements approved \
 
 ## 0.6 项目根、时间轴、VFR 与度量口径
 
-- **项目根**：`motion.project.json` 是唯一标识；新项目用 `scaffold` 建在
-  `~/dsh-motion-projects/<slug>`（或 `MOTION_PROJECTS_HOME`），不要建在插件包内；
-  老项目用 `project-adopt` 补 manifest。正式 `motion_render` 必须有项目根；
+- **项目根**：`motion.project.json` 是唯一标识；项目都放在会话工作目录下的
+  `dsh-motion-projects/<目录名>`（`MOTION_PROJECTS_HOME` 可覆盖），不建在插件包内；
+  工具入参可以直接给项目目录名（`"calculus-45s"`）。正式 `motion_render` 必须有项目根；
+- **不越界**：解析只认 `dsh-motion-projects/<目录名>` 这一层，不向上找、不 legacy；
+  子目录里的同名项目会被拒绝；`projects.mjs list|repair|rename` 管项目集；
 - **输出位置**：frames/render/probe 默认落 `<project>/out/...`，不要用 cwd 决定；
   同一项目并发由 `.dsh-motion/project.lock` 挡住；
 - **时间轴契约**：项目里的 `timeline.json` 是 cue 的唯一来源；场景继承
@@ -131,14 +135,15 @@ node scripts/approvals.mjs set <project> requirements approved \
 ```bash
 node scripts/approvals.mjs init <project> --mode light
 node scripts/approvals.mjs set <project> requirements approved \
-  --duration 30s --aspect 1920x1080 --delivery silent \
-  --confirmation q_... --note "用户确认"  # frames / silent / narrated
+  --duration 30s --aspect 1920x1080 --fps 30fps --delivery silent \
+  --style 3b1b --audience high --narration none \
+  --confirmation q_... --note "用户确认"  # delivery 三选一：frames / silent / narrated
 node scripts/approvals.mjs set <project> script_storyboard approved --note "用户确认"
 node scripts/approvals.mjs check <project>   # 未全部 approved 时退出 1
 ```
 
 - `check` 不通过，不进入执行；
-- `requirements` 是硬门：`--duration / --aspect / --delivery` 必须落值，否则 `motion_frames` 拒绝出帧（没有账本的临时场景不拦）；**改需求会把下游全部重置为 pending**，旧的确认不能复用；
+- `requirements` 是硬门：`--duration / --aspect / --fps / --delivery / --style / --audience`（以及 narrated 的 `--narration`）必须落值，否则 `motion_frames` 拒绝出帧（没有账本的临时场景不拦）；**改需求会把下游全部重置为 pending**，旧的确认不能复用；
 - `start` 是独立阶段，只有用户**明确**说“可以开始 / 开始做 / 按这个执行 / 开工”才能置为 approved；
 - “好 / 可以 / 行”如果只是回答某个选项，**不算**整体开工；
 - 不确定就问：“脚本、分镜、风格帧都确认了，现在开始执行吗？”
@@ -167,7 +172,7 @@ node scripts/approvals.mjs check <project>   # 未全部 approved 时退出 1
 
 ## 6. 硬规则（逐条对照）
 
-1. **先锁需求再动手**：时长/画幅/交付没问过、没落进 `requirements.brief`，不出帧也不出片；
+1. **先锁需求再动手**：七题没问完、没落进 `requirements.brief`（时长/画幅/帧率/交付/风格/受众/旁白），不出帧也不出片；
 2. **没有明确开工指令，不执行**：没听到“可以开始”就不写完整场景、不出全片；
 3. **没有 DESIGN.md 或参考语法，不开工**——否则每次都是同一个默认 look；
 4. **默认先帧后片**：先用 `motion_frames` 把画面改对，再决定要不要渲染；

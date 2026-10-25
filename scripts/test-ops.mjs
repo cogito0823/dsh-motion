@@ -10,12 +10,13 @@
  * 用法：node scripts/test-ops.mjs
  */
 import assert from 'node:assert/strict'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { assertApproved, assertBrief, readApprovals } from '../lib/approvals.js'
 import { pluginSource } from '../lib/doctor.js'
+import { writeProjectManifest } from '../lib/project.js'
 import { importFresh } from '../lib/fresh.js'
 import {
   isBlankFrame,
@@ -219,11 +220,16 @@ test('pluginSource 版本与 lib 路径自洽', () => {
 
 // —— approvals：工具层的开工确认硬门 ——
 {
-  const dir = mkdtempSync(join(tmpdir(), 'dsh-approvals-gate-'))
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'dsh-approvals-gate-')))
+  const ws = join(root, 'dsh-motion-projects')
+  const dir = join(ws, 'gate')
+  mkdirSync(dir, { recursive: true })
   const scene = join(dir, 'scene.py')
   writeFileSync(scene, 'pass\n')
+  writeProjectManifest(dir, { name: 'gate' })
+  const opts = { workspace: ws }
   let missing = false
-  try { assertApproved(scene) } catch { missing = true }
+  try { assertApproved(scene, opts) } catch { missing = true }
   if (missing) console.log('ok   assertApproved 拒绝缺少 APPROVALS.json')
   else { failed++; console.log('FAIL assertApproved 拒绝缺少 APPROVALS.json') }
 
@@ -236,29 +242,32 @@ test('pluginSource 版本与 lib 路径自洽', () => {
       start: { label: '开工', status: 'pending' },
     },
   }))
-  const report = readApprovals(scene)
+  const report = readApprovals(scene, opts)
   if (report.status === 'pending' && report.missing.includes('交付清单')) {
     console.log('ok   readApprovals 报出缺失的交付清单')
   } else { failed++; console.log('FAIL readApprovals 报出缺失的交付清单') }
 
   let blocked = false
-  try { assertApproved(scene) } catch { blocked = true }
+  try { assertApproved(scene, opts) } catch { blocked = true }
   if (blocked) console.log('ok   assertApproved 拒绝 pending 阶段')
   else { failed++; console.log('FAIL assertApproved 拒绝 pending 阶段') }
 
   // 出帧门：老账本 requirements 已 approved 但没有 brief，视同未确认
   let legacyBlocked = false
-  try { assertBrief(scene) } catch { legacyBlocked = true }
+  try { assertBrief(scene, opts) } catch { legacyBlocked = true }
   if (legacyBlocked) console.log('ok   assertBrief 拒绝缺 brief 的老账本')
   else { failed++; console.log('FAIL assertBrief 拒绝缺 brief 的老账本') }
 
   const ledger = JSON.parse(readFileSync(join(dir, 'APPROVALS.json'), 'utf8'))
   ledger.stages.requirements = {
     label: '需求', status: 'approved', at: null, by: 'user', note: '',
-    brief: { duration: '30s', aspect: '1920x1080', delivery: 'narrated' },
+    brief: {
+      duration: '30s', aspect: '1920x1080', fps: '30fps', delivery: 'narrated',
+      style: '3b1b', audience: 'high', narration: 'zh-neutral',
+    },
   }
   writeFileSync(join(dir, 'APPROVALS.json'), JSON.stringify(ledger))
-  const brief = assertBrief(scene)
+  const brief = assertBrief(scene, opts)
   if (brief?.brief?.delivery === 'narrated') console.log('ok   assertBrief 放行已锁定的需求')
   else { failed++; console.log('FAIL assertBrief 放行已锁定的需求') }
 
@@ -269,6 +278,7 @@ test('pluginSource 版本与 lib 路径自洽', () => {
   if (assertBrief(scratchScene) === null) console.log('ok   assertBrief 放行临时场景')
   else { failed++; console.log('FAIL assertBrief 放行临时场景') }
   rmSync(scratch, { recursive: true, force: true })
+  rmSync(root, { recursive: true, force: true })
 }
 
 test('parseFrameRate 解析 30000/1001 与 0/0', () => {

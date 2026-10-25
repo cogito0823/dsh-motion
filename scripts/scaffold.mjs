@@ -3,15 +3,24 @@
  * 从 templates/project 复制一份项目骨架，并填入标题/时长。
  *
  *   node scripts/scaffold.mjs --title "欧拉公式" --duration 10
- *   node scripts/scaffold.mjs ~/dsh-motion-projects/my-film --title "欧拉公式" --duration 10
- *   node scripts/scaffold.mjs <dest> --force
+ *   node scripts/scaffold.mjs my-film --title "欧拉公式" --duration 10
+ *
+ * 默认落在 <会话 cwd>/dsh-motion-projects/<slug>，建完自动刷新 registry.json。
  */
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { basename, dirname, join, resolve } from 'node:path'
+import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { isInside, projectsHome, slugify, writeProjectManifest } from '../lib/project.js'
+import {
+  ensureProjectDirs,
+  isInside,
+  rebuildRegistry,
+  slugify,
+  uniqueDirName,
+  workspaceRoot,
+  writeProjectManifest,
+} from '../lib/project.js'
 const TEMPLATE = join(dirname(fileURLToPath(import.meta.url)), '..', 'templates', 'project')
 const PACKAGE_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -19,8 +28,7 @@ const HELP = `用法: node scripts/scaffold.mjs [dest] [选项]
 
   --title <text>       片名，默认目录名
   --duration <sec>     片长，默认 10
-  --projects-home <dir> 项目工作区，默认 ~/dsh-motion-projects
-  --allow-inside-repo  允许建在插件包内（仅维护者）
+  --workspace <dir>    项目集目录，默认 <cwd>/dsh-motion-projects（--projects-home 同义，保留兼容）
   --force              目标非空时先删掉再建（慎用）
 `
 
@@ -92,16 +100,28 @@ export function scaffoldProject(dest, options = {}) {
   if (!existsSync(TEMPLATE)) throw new Error(`找不到模板: ${TEMPLATE}`)
   const fallbackTitle = dest ? basename(resolve(dest)) : 'untitled'
   const title = safeTitle(options.title ?? fallbackTitle) || 'untitled'
-  const target = assertSafeDest(
-    dest ?? join(projectsHome(options), slugify(title)),
-  )
+  const ws = workspaceRoot(options)
+  let target
+  if (dest && !isAbsolute(dest) && !dest.includes('/')) {
+    // 相对的单段名字 = 项目目录名，落在 workspace 里
+    target = assertSafeDest(join(ws, dest))
+  } else if (dest) {
+    const chosen = resolve(dest)
+    if (!isInside(chosen, ws)) {
+      throw new Error(
+        `项目必须建在会话项目集里: ${ws}\n`
+        + `  收到: ${chosen}\n`
+        + '要建别处请先 export MOTION_PROJECTS_HOME=<目录>。',
+      )
+    }
+    target = assertSafeDest(chosen)
+  } else {
+    target = assertSafeDest(join(ws, uniqueDirName(ws, slugify(title))))
+  }
   const duration = Number(options.duration ?? 10)
   if (!Number.isFinite(duration) || duration <= 0) throw new Error(`duration 必须是正数: ${options.duration}`)
-  if (isInside(target, PACKAGE_ROOT) && options.allowInsideRepo !== true) {
-    throw new Error(
-      `拒绝在插件包内创建项目: ${target}\n`
-      + `请用项目工作区（默认 ${projectsHome(options)}），维护者确需放包内时加 --allow-inside-repo。`,
-    )
+  if (!isInside(target, ws)) {
+    throw new Error(`项目必须建在 ${ws} 下，收到 ${target}`)
   }
 
   if (existsSync(target)) {
@@ -133,14 +153,16 @@ export function scaffoldProject(dest, options = {}) {
   if (existsSync(ignoreTemplate)) renameSync(ignoreTemplate, join(target, '.gitignore'))
   for (const file of walk(target)) fill(file, vars)
 
-  for (const dir of ['out', 'audio', '.dsh-motion']) mkdirSync(join(target, dir), { recursive: true })
+  ensureProjectDirs(target)
   const manifest = writeProjectManifest(target, {
     name: title,
     primaryScene: 'scene.py',
     slug: basename(target),
   })
+  rebuildRegistry(options)
   return {
     dest: target,
+    workspace: ws,
     title,
     duration,
     manifest,
@@ -158,8 +180,7 @@ function main() {
   const result = scaffoldProject(dest, {
     title: args.title,
     duration: args.duration === undefined ? 10 : Number(args.duration),
-    projectsHome: args['projects-home'],
-    allowInsideRepo: args['allow-inside-repo'] === true,
+    workspace: args.workspace ?? args['projects-home'],
     force: args.force === true,
   })
   console.log(`scaffold ${result.dest}`)

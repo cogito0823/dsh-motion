@@ -15,7 +15,7 @@
 | `motion_frames` | **极简模式（默认）**：直接从场景出帧，不生成视频、不用 HF；几秒拿到 storyboard PNG 与 layout 问题；输出落 `<project>/out/frames` |
 | `motion_doctor` | **环境预检（一次调用）**：运行时 + 真实可用字体清单 + 公式转换 + API/函数/rate；按指纹缓存 12 h（不再按 Node 版本分叉） |
 | `motion_setup` | **环境自愈**：建 venv、装 manimgx/sympy（`tts=true` 加 edge-tts）；在宿主进程执行，不受模型 bash 沙箱限制 |
-| `motion_render` | 渲染 Manim / manimgx 场景；必须有 `motion.project.json`，工具路径每次走平台审批，`APPROVALS.json` 是前置账本；输出落 `<project>/out/render` |
+| `motion_render` | 渲染 Manim / manimgx 场景；必须有 `motion.project.json`，`APPROVALS.json` 是前置账本（已通过就直接渲，未通过才走一次平台审批）；输出落 `<project>/out/render` |
 | `motion_probe` | 成片抽帧拼 contact sheet，报告全黑/过曝，并给出 fps/帧数/VFR/CFR |
 | `formula_check` | 用 SymPy 判断两个表达式是否恒等 |
 
@@ -32,6 +32,7 @@ npm 页面只渲染 README，不提供每个版本的 release note；完整记�
 
 | 版本 | 日期 | 主要内容 |
 |---|---|---|
+| [0.10.0](https://github.com/cogito0823/dsh-motion/releases/tag/v0.10.0) | 2026-10-26 | 需求卡点固定七题（含时长/帧率/受众/风格/旁白）；项目集收敛到会话工作区的 `dsh-motion-projects/`，解析不越界/不嵌套/无 legacy；账本通过后渲染不再逐次弹窗 |
 | [0.9.1](https://github.com/cogito0823/dsh-motion/releases/tag/v0.9.1) | 2026-10-26 | 文档：README 增加版本摘要与 Releases 链接（docs-only） |
 | [0.9.0](https://github.com/cogito0823/dsh-motion/releases/tag/v0.9.0) | 2026-10-26 | 项目根 manifest、审批门与审计、时间轴自检、TTS 缓存、VFR/CFR、运行账本、showcase 标准化 |
 | [0.6.0](https://github.com/cogito0823/dsh-motion/releases/tag/v0.6.0) | 2026-10-26 | 免费 edge-tts 旁白、词级 timing、SRT、混音 |
@@ -64,16 +65,20 @@ npm 页面只渲染 README，不提供每个版本的 release note；完整记�
 新项目用脚手架起，不要从空白开始：
 
 ```bash
-node scripts/scaffold.mjs ~/dsh-motion-projects/my-film --title "欧拉公式" --duration 30
-node scripts/timeline-check.mjs ~/dsh-motion-projects/my-film --strict
-node scripts/run-report.mjs ~/dsh-motion-projects/my-film --wall 752
+node scripts/scaffold.mjs my-film --title "欧拉公式" --duration 30
+node scripts/timeline-check.mjs dsh-motion-projects/my-film --strict
+node scripts/run-report.mjs dsh-motion-projects/my-film --wall 752
 ```
 
 - 模板生成 `motion.project.json` / `scene.py` / `timeline.json` / `timeline.py` / `narration.json` / `assemble.py` / `DESIGN.md`；
-- **一个项目 = 一部片子**，默认放在 `~/dsh-motion-projects/<slug>`（可用 `MOTION_PROJECTS_HOME` 改）；
-- `motion.project.json` 是唯一项目根；`APPROVALS.json` / `out/` / `audio/` / `.dsh-motion/` 都相对它，**父目录账本不会继承**；
+- **一个项目 = 一部片子**，放在**会话工作目录**下的 `dsh-motion-projects/<目录名>`（可用 `MOTION_PROJECTS_HOME` 改）；
+- 项目集只有这一层：`dsh-motion-projects/registry.json` 是可删可重建的索引，不参与寻址；
+- `motion.project.json` 是唯一项目根，`id` 在这里，目录改名不影响身份；`APPROVALS.json` / `out/` / `audio/` / `.dsh-motion/` 都相对它；
+- 解析**不越界、不向上找**：workspace 外的 `scene.py` 一律 unmanaged；子目录里的项目会被拒绝（不允许嵌套）；
 - 正式 `motion_render` 必须有项目根；临时场景只能出帧，或用 `--explore` 调试；
-- 已有老项目没有 manifest：`node scripts/project-adopt.mjs <dir>` 补一个，不移动文件；
+- 工具入参可以给**项目目录名**（`{"file": "my-film"}`）或场景文件的绝对路径；
+- 仓库自带的 `showcase/*` 不在项目集内，跑它们用 `MOTION_PROJECTS_HOME=showcase`；
+- 管理项目集：`node scripts/projects.mjs list|show|repair|rename|registry`；
 - `timeline.py` 的 `TimedScene.cue()` 在运行时对比 `self.time`，落后超过 0.35s 打印 `[late]`；
 - `timeline-check` 检查 cue 乱序/越界、旁白晚于画面、旁白压到下一拍；
 - 每个项目写 `<project>/.dsh-motion/metrics.jsonl`，`run-report` 汇总 active / wall，避免把 compute 百分比当端到端收益；
@@ -129,16 +134,21 @@ node scripts/run-report.mjs ~/dsh-motion-projects/my-film --wall 752
 5. 交付清单（尺寸 / fps / 时长 / 文件 / 音频 / 字幕）
 6. **用户明确说“可以开始 / 开始做 / 按这个执行”**
 
-`motion_render` 在工具路径上每次都会走 Harness 的 `ctx.approval.request`，让用户在界面里
-逐次确认；用户拒绝则渲染失败。`APPROVALS.json` 仍是前置条件（CLI/无平台路径会校验）。
-拒绝、`--explore` 绕过和平台审批都会写进 `<project>/.dsh-motion/approvals.jsonl`，不会静默消失。
+`motion_render` 只在账本没通过时才走 Harness 的 `ctx.approval.request`：
+账本全 approved 说明需求/脚本/分镜/开工都确认过了，渲染不再重复问，只往审计里记一条
+`ledger-approved`。账本缺失或未通过时用户在界面里确认一次，拒绝则渲染失败。
+想恢复“每次渲染都问”，在插件配置里加 `confirmEveryRender: true`。
+`APPROVALS.json` 始终是前置条件（CLI/无平台路径也会校验）。
+拒绝、`--explore` 绕过、平台审批与跳过审批都会写进 `<project>/.dsh-motion/approvals.jsonl`。
 
-`motion_frames` 也会拦：项目有账本、但需求没落「时长 / 画幅 / 交付」时，直接拒绝出帧。第一步永远是问这三项，然后落账：
+`motion_frames` 也会拦：项目有账本、但需求没落全「时长 / 画幅 / 帧率 / 交付 / 风格 / 受众 / 旁白」时，直接拒绝出帧。
+第一步永远是固定七题一次问完，然后落账：
 
 ```bash
 npm run approvals -- init <project> --mode standard
 npm run approvals -- set <project> requirements approved \
-  --duration 30s --aspect 1920x1080 --delivery narrated \
+  --duration 30s --aspect 1920x1080 --fps 30fps --delivery narrated \
+  --style 3b1b --audience high --narration zh-neutral \
   --confirmation q_... --note "用户确认"
 ```
 
@@ -206,7 +216,7 @@ Windows 把 `bin/` 换成 `Scripts\`，可执行文件加 `.exe`。
       name: dsh-motion
       config:
         motionHome: ~/.dsh/data/dsh-motion
-        projectsHome: ~/dsh-motion-projects        # 用户项目工作区
+        workspace: <会话 cwd>/dsh-motion-projects      # 默认值；也可用 MOTION_PROJECTS_HOME
         venv: ~/.dsh/data/dsh-motion/venv
         python: /opt/homebrew/bin/python3.13   # 可选；默认找 python3.13/3.12/3.11/3
         packages: [manimgx, sympy, manimgx-fonts, manimgx-fonts-cjk]  # 可选；motion_setup 安装清单
@@ -221,8 +231,8 @@ Windows 把 `bin/` 换成 `Scripts\`，可执行文件加 `.exe`。
 ### 0. 先建项目
 
 ```bash
-node scripts/scaffold.mjs ~/dsh-motion-projects/demo --title "演示" --duration 10
-cd ~/dsh-motion-projects/demo
+node scripts/scaffold.mjs demo --title "演示" --duration 10
+cd dsh-motion-projects/demo
 ```
 
 项目根由 `motion.project.json` 标识；正式渲染必须能找到它。临时场景可以只出帧，但不要用于交付。
@@ -245,7 +255,7 @@ class Demo(Scene):
 
 ```jsonc
 // motion_frames
-{ "file": "/Users/you/dsh-motion-projects/demo/scene.py", "times": ["1.2", "4.5", "end"] }
+{ "file": "demo", "times": ["1.2", "4.5", "end"] }
 ```
 
 返回 `storyboard` PNG 路径与 layout 问题清单（实测 3–4 帧约 3–5 秒）。看图改场景，不满意就再来一轮；这一步不生成 mp4，也不需要 HyperFrames。
@@ -254,7 +264,7 @@ class Demo(Scene):
 
 ```jsonc
 // motion_render
-{ "file": "/Users/you/dsh-motion-projects/demo/scene.py", "scene": "Demo", "width": 1920, "height": 1080, "fps": 60 }
+{ "file": "demo", "scene": "Demo", "width": 1920, "height": 1080, "fps": 60 }
 ```
 
 ### 4. 公式先验
@@ -290,13 +300,13 @@ python3 -m venv .venv-tts
 生成逐句音频、词级 `timing.json` 和 `captions.srt`：
 
 ```bash
-npm run narrate -- ~/dsh-motion-projects/foo --voice zh-CN-XiaoxiaoNeural --rate +10%
+npm run narrate -- dsh-motion-projects/foo --voice zh-CN-XiaoxiaoNeural --rate +10%
 ```
 
 混音（可选音乐、自动 duck、−14 LUFS / −1 dBTP），需要时直接压进现有视频：
 
 ```bash
-npm run mix -- ~/dsh-motion-projects/foo --music assets/bed.wav \
+npm run mix -- dsh-motion-projects/foo --music assets/bed.wav \
   --mux out/foo.mp4 --mux-out out/foo-narrated.mp4
 ```
 
@@ -311,7 +321,7 @@ npm run mix -- ~/dsh-motion-projects/foo --music assets/bed.wav \
 没有网络时：
 
 ```bash
-npm run narrate -- ~/dsh-motion-projects/foo --provider say --voice Tingting --rate 230
+npm run narrate -- dsh-motion-projects/foo --provider say --voice Tingting --rate 230
 ```
 
 `say` 不提供词级时间，字幕按 token 权重估算，并在 `timing.json` 标 `estimated`。Python 解释器可用 `--python` 或 `MOTION_TTS_PYTHON` 指定。

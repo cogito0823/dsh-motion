@@ -40,7 +40,7 @@
     }
   },
   "scripts": {
-    "check": "node --check lib/index.js && node --check lib/ops.js && node --check lib/env.js && node --check lib/doctor.js && node --check lib/preflight.js && node --check lib/cache.js && node --check lib/skills.js && node --check lib/setup.js && node --check lib/project.js && node --check lib/timeline.js && node --check lib/metrics.js && node --check lib/approvals.js && node --check scripts/narrate.mjs && node --check scripts/mix.mjs && node --check scripts/lib/audio.mjs && node --check scripts/setup.mjs && node --check scripts/timeline-check.mjs && node --check scripts/scaffold.mjs && node --check scripts/run-report.mjs && node --check scripts/project-adopt.mjs && node --check scripts/clean-pycache.mjs && node --check scripts/dev.mjs",
+    "check": "node --check lib/index.js && node --check lib/ops.js && node --check lib/env.js && node --check lib/doctor.js && node --check lib/preflight.js && node --check lib/cache.js && node --check lib/skills.js && node --check lib/setup.js && node --check lib/project.js && node --check lib/timeline.js && node --check lib/metrics.js && node --check lib/approvals.js && node --check scripts/narrate.mjs && node --check scripts/mix.mjs && node --check scripts/lib/audio.mjs && node --check scripts/setup.mjs && node --check scripts/timeline-check.mjs && node --check scripts/scaffold.mjs && node --check scripts/run-report.mjs && node --check scripts/projects.mjs && node --check scripts/clean-pycache.mjs && node --check scripts/dev.mjs",
     "test": "node scripts/test-ops.mjs && node scripts/test-route.mjs && node scripts/test-plan.mjs && node scripts/test-approvals.mjs && node scripts/test-preflight.mjs && node scripts/test-skills.mjs && node scripts/test-setup.mjs && python3 -B scripts/test-probe-fonts.py && node scripts/test-timeline.mjs && node scripts/test-metrics.mjs && node scripts/test-scaffold.mjs && node scripts/test-project.mjs && node scripts/test-approval-platform.mjs",
     "smoke": "node scripts/smoke.mjs",
     "dev": "node scripts/dev.mjs",
@@ -57,7 +57,7 @@
     "timeline": "node scripts/timeline-check.mjs",
     "report": "node scripts/run-report.mjs",
     "scaffold": "node scripts/scaffold.mjs",
-    "adopt": "node scripts/project-adopt.mjs",
+    "projects": "node scripts/projects.mjs",
     "clean": "node scripts/clean-pycache.mjs"
   },
   "repository": {

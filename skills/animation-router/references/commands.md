@@ -7,12 +7,14 @@
 ## 0. 新项目脚手架
 
 ```bash
-# 默认建到 ~/dsh-motion-projects/<slug>；也可显式传 dest
+# 默认建到 <cwd>/dsh-motion-projects/<slug>；相对的单段名字就是目录名
 node scripts/scaffold.mjs --title "片名" --duration 30
-node scripts/scaffold.mjs ~/dsh-motion-projects/foo --title "片名" --duration 30
+node scripts/scaffold.mjs foo --title "片名" --duration 30
 
-# 老项目补 manifest（不移动文件）
-node scripts/project-adopt.mjs <project>
+# 项目集管理：列举 / 补 manifest / 改名 / 重建索引
+node scripts/projects.mjs list
+node scripts/projects.mjs repair <目录名>
+node scripts/projects.mjs rename <旧> <新>
 
 # 生成 motion.project.json / scene.py / timeline.py / timeline.json /
 # narration.json / assemble.py / DESIGN.md
@@ -49,15 +51,16 @@ node scripts/timeline-check.mjs <project> --json
 ## 1. 需求与确认门
 
 ```bash
-# 生成问题（JSON；交给 ask_user_question）
+# 生成固定七题（JSON；一次全部交给 ask_user_question）
 node scripts/plan-questions.mjs "<brief>" --json
 
 # 初始化账本
 node scripts/approvals.mjs init <project> --mode light|standard|full
 
-# 需求必须落 时长/画幅/交付，否则 motion_frames 拒绝出帧
+# 需求必须落 时长/画幅/帧率/交付/风格/受众/旁白，否则 motion_frames 拒绝出帧
 node scripts/approvals.mjs set <project> requirements approved \
-  --duration 30s --aspect 1920x1080 --delivery silent \
+  --duration 30s --aspect 1920x1080 --fps 30fps --delivery silent \
+  --style 3b1b --audience high --narration none \
   --confirmation q_... --note "用户确认"   # delivery 三选一：frames / silent / narrated
 
 # 其余阶段

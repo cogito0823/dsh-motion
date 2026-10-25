@@ -87,7 +87,7 @@ tail -2 ~/.dsh/logs/motion.log
 node scripts/dev.mjs render <scene.py> --explore
 ```
 
-或在插件配置里 `allowUnconfirmed: true`。**不要**把它写进用户默认配置。
+或在插件配置里 `allowUnconfirmed: true`（跳过账本校验）。**不要**把它写进用户默认配置。
 
 ## 4. 兜底：插件管理器不收目录时
 

@@ -2,9 +2,9 @@
 /**
  * 逐句旁白：文本 → 音频 + 词级时间轴 + SRT。
  *
- *   node scripts/narrate.mjs ~/dsh-motion-projects/foo
- *   node scripts/narrate.mjs ~/dsh-motion-projects/foo --provider edge --voice zh-CN-XiaoxiaoNeural --rate +10%
- *   node scripts/narrate.mjs ~/dsh-motion-projects/foo --provider say --voice Tingting --rate 230
+ *   node scripts/narrate.mjs dsh-motion-projects/foo
+ *   node scripts/narrate.mjs dsh-motion-projects/foo --provider edge --voice zh-CN-XiaoxiaoNeural --rate +10%
+ *   node scripts/narrate.mjs dsh-motion-projects/foo --provider say --voice Tingting --rate 230
  *
  * 免费路线：edge-tts（无需账号，带词级边界）；离线兜底：macOS say。
  * 产物默认写到 <project>/audio/<provider>/。

@@ -4,12 +4,14 @@
  *
  *   node scripts/approvals.mjs init <project> --mode light
  *   node scripts/approvals.mjs set <project> requirements approved \
- *     --duration 30s --aspect 1920x1080 --delivery narrated --note "用户确认"
+ *     --duration 30s --aspect 1920x1080 --fps 30fps --delivery narrated \
+ *     --style 3b1b --audience high --narration zh-neutral --note "用户确认"
  *   node scripts/approvals.mjs set <project> script_storyboard approved --note "用户确认"
  *   node scripts/approvals.mjs check <project>
  *   node scripts/approvals.mjs show <project>
  *
- * “需求”是硬门：必须带 --duration/--aspect/--delivery，否则 motion_frames 拒绝出帧。
+ * “需求”是硬门：必须带 --duration/--aspect/--fps/--delivery/--style/--audience
+ * （narrated 时还要 --narration），否则 motion_frames 拒绝出帧。
  * 改需求会把下游阶段（脚本/分镜/视觉/交付/开工）重置为 pending。
  *
  * 模式：
@@ -20,7 +22,14 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
-import { DELIVERY_MODES, REQUIRED_BRIEF, briefHashOf, recordApprovalEvent } from '../lib/approvals.js'
+import {
+  DELIVERY_MODES,
+  FPS_CHOICES,
+  REQUIRED_BRIEF,
+  briefHashOf,
+  missingBriefFields,
+  recordApprovalEvent,
+} from '../lib/approvals.js'
 import { PROJECT_FILE, readProjectManifest } from '../lib/project.js'
 
 const FILE = 'APPROVALS.json'
@@ -42,12 +51,29 @@ const MODES = {
 const STATUSES = new Set(['pending', 'approved', 'rejected'])
 const CONFIRMATION_REQUIRED = new Set(['requirements', 'start'])
 
-/** 需求三件套的格式约束：宁可报错，也不要存进一句含糊的 note。 */
+/** 规格/创作项的格式约束：宁可报错，也不要存进一句含糊的 note。 */
 const BRIEF_FORMATS = {
   duration: (value) => (/^\d+(\.\d+)?s$/.test(value) ? null : `时长写成 30s（带 s），收到的是 "${value}"`),
   aspect: (value) => (/^\d+x\d+$/.test(value) ? null : `画幅写成 1920x1080（宽x高），收到的是 "${value}"`),
+  fps: (value, brief) => {
+    if (value === 'N/A') {
+      return brief.delivery === 'frames' ? null : '帧率只能写 N/A 当交付是 frames（只出帧）'
+    }
+    const match = /^(\d{2,3})(fps)?$/.exec(String(value))
+    if (!match) return `帧率写成 30fps（或 30），收到的是 "${value}"`
+    return FPS_CHOICES.includes(Number(match[1]))
+      ? null
+      : `帧率只收 ${FPS_CHOICES.join(' / ')}；分数帧率请显式说明`
+  },
   delivery: (value) =>
     DELIVERY_MODES.includes(value) ? null : `交付只能是 ${DELIVERY_MODES.join(' / ')}，收到的是 "${value}"`,
+  style: (value) => (/^[a-z0-9][a-z0-9-]{1,39}$/.test(value) ? null : `风格写 registry 的 slug，收到的是 "${value}"`),
+  audience: (value) => (/^[\w\u4e00-\u9fa5-]{2,40}$/u.test(String(value)) ? null : `观众水平写成 high / university / general，收到的是 "${value}"`),
+  narration: (value) => (
+    ['zh-neutral', 'zh-warm', 'zh-strong', 'en-neutral', 'none'].includes(value)
+      ? null
+      : `旁白写成 zh-neutral / zh-warm / zh-strong / en-neutral / none，收到的是 "${value}"`
+  ),
 }
 
 function fail(message) {
@@ -113,19 +139,25 @@ function set(project, stage, status, options) {
   }
   if (stage === 'requirements' && status === 'approved') {
     const brief = { ...(data.stages.requirements.brief ?? {}) }
-    for (const key of [...REQUIRED_BRIEF, 'audience', 'style', 'fps', 'title']) {
+    for (const key of [...REQUIRED_BRIEF, 'narration', 'title']) {
       if (options[key] !== undefined) brief[key] = options[key]
     }
-    const missing = REQUIRED_BRIEF.filter((key) => !brief[key])
+    const missing = missingBriefFields(brief)
     if (missing.length) {
       fail(
         `确认需求必须落值：${missing.map((key) => `--${key}`).join(' / ')}\n`
-        + '例如：--duration 30s --aspect 1920x1080 --delivery narrated',
+        + '例如：--duration 30s --aspect 1920x1080 --fps 30fps --delivery narrated \\\n'
+        + '      --style 3b1b --audience high --narration zh-neutral',
       )
     }
-    for (const key of REQUIRED_BRIEF) {
-      const problem = BRIEF_FORMATS[key](brief[key])
+    for (const key of Object.keys(BRIEF_FORMATS)) {
+      if (brief[key] === undefined) continue
+      const problem = BRIEF_FORMATS[key](brief[key], brief)
       if (problem) fail(problem)
+    }
+    // 交付要旁白却把旁白写成 none：两个字段互相打架，宁可报错
+    if (brief.delivery === 'narrated' && brief.narration === 'none') {
+      fail('交付是 narrated，但旁白是 none；改 --delivery 或 --narration 再落账')
     }
     data.stages.requirements.brief = brief
     data.stages.requirements.briefHash = briefHashOf(brief)
@@ -180,9 +212,10 @@ function table(data) {
   })
   const brief = data.stages?.requirements?.brief
   const briefLine = brief
-    ? `brief: ${brief.duration} · ${brief.aspect} · ${brief.delivery}`
-      + `${brief.audience ? ` · ${brief.audience}` : ''}${brief.style ? ` · ${brief.style}` : ''}`
-    : 'brief: （未记录：时长/画幅/交付）'
+    ? `brief: ${brief.duration} · ${brief.aspect} · ${brief.fps} · ${brief.delivery}`
+      + `${brief.style ? ` · ${brief.style}` : ''}${brief.audience ? ` · ${brief.audience}` : ''}`
+      + `${brief.narration ? ` · ${brief.narration}` : ''}`
+    : 'brief: （未记录：规格与创作项）'
   return [`project: ${data.project}  mode: ${data.mode}`, briefLine, ...rows].join('\n')
 }
 
@@ -203,8 +236,9 @@ function check(project) {
     console.error(`\n未确认: ${missing.join('、')}`)
     process.exit(1)
   }
-  if (!data.stages?.requirements?.brief) {
-    console.error('\n需求没有落 时长/画幅/交付，视为未确认')
+  const missingBrief = missingBriefFields(data.stages?.requirements?.brief)
+  if (missingBrief.length) {
+    console.error(`\n需求缺这些项，视为未确认：${missingBrief.map((key) => `--${key}`).join(' / ')}`)
     process.exit(1)
   }
   if (data.stages.requirements.briefHash && briefHashOf(data.stages.requirements.brief) !== data.stages.requirements.briefHash) {

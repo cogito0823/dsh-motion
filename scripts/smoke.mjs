@@ -28,7 +28,7 @@ const required = [
   'scripts/timeline-check.mjs',
   'scripts/scaffold.mjs',
   'scripts/run-report.mjs',
-  'scripts/project-adopt.mjs',
+  'scripts/projects.mjs',
   'scripts/mix.mjs',
   'scripts/lib/audio.mjs',
   'scripts/lib/tts_edge.py',

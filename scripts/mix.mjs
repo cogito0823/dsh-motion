@@ -2,8 +2,8 @@
 /**
  * 混音：逐句人声 + 可选音乐 → 48 kHz / 24-bit 母带，并做 -14 LUFS / -1 dBTP。
  *
- *   node scripts/mix.mjs ~/dsh-motion-projects/foo
- *   node scripts/mix.mjs ~/dsh-motion-projects/foo --music assets/bed.wav --mux out.mp4 --mux-out out-narrated.mp4
+ *   node scripts/mix.mjs dsh-motion-projects/foo
+ *   node scripts/mix.mjs dsh-motion-projects/foo --music assets/bed.wav --mux out.mp4 --mux-out out-narrated.mp4
  *
  * 依赖：ffmpeg/ffprobe、带 numpy 的 Python（默认 .venv-tts）。
  */

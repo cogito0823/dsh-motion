@@ -30,7 +30,12 @@ function elapsed(start) {
 if (!cmd) fail('用法: node scripts/dev.mjs frames|render|probe|doctor|setup ...\nrender --explore 仅用于临时场景，不进入交付。')
 
 function outputDir(file, kind) {
-  const project = resolveProject(file, { allowLegacy: true })
+  let project = { root: null }
+  try {
+    project = resolveProject(file, { mustExist: false })
+  } catch {
+    project = { root: null }
+  }
   const dir = project.root ? join(project.root, 'out', kind) : join(dirname(resolve(file)), 'out', kind)
   mkdirSync(dir, { recursive: true })
   return dir
