@@ -25,9 +25,11 @@ updated: 2026-10-25
 | `swiss-motion` | [STYLE](styles/swiss-motion/STYLE.md) | [tokens](styles/swiss-motion/tokens.json) | [theme.py](styles/swiss-motion/theme.py) |
 | `dataviz` | [STYLE](styles/dataviz/STYLE.md) | [tokens](styles/dataviz/tokens.json) | [theme.py](styles/dataviz/theme.py) |
 | `blueprint` | [STYLE](styles/blueprint/STYLE.md) | [tokens](styles/blueprint/tokens.json) | [theme.py](styles/blueprint/theme.py) |
+| `whiteboard` | [STYLE](styles/whiteboard/STYLE.md) | [tokens](styles/whiteboard/tokens.json) | [theme.py](styles/whiteboard/theme.py) |
+| `3b1b` | [STYLE](styles/3b1b/STYLE.md) | [tokens](styles/3b1b/tokens.json) | [theme.py](styles/3b1b/theme.py) |
 
-三个参考帧：`styles/<slug>/preview.jpg`。所有风格都从 Lemo-Opuscar 改编，许可与差异写在各 `STYLE.md` 顶部。
+五个参考帧：`styles/<slug>/preview.jpg`。除 `3b1b` 来自 Manim 社区外，其余四套改编自 Lemo-Opuscar；许可与差异写在各 `STYLE.md` 顶部。
 
 ## 演示
 
-`showcase/` 里有三个类别的短片（公式 / 数据 / 几何），每个都记录出帧与渲染耗时，见 [showcase/README.md](showcase/README.md)。
+`showcase/` 里有五个类别的短片（公式 / 数据 / 几何 / 白板 / 暗场数学），每个都记录出帧与渲染耗时，见 [showcase/README.md](showcase/README.md)。

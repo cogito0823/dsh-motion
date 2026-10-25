@@ -60,7 +60,7 @@ DESIGN.md 写完不等于风格成立。挑 3 个关键时刻（开场、转折�
 - 三张里至少一张是 signature shot；
 - 两轮还不对，就换更接近的参考语法，而不是继续调参。
 
-## 六种已验证的语言
+## 八种已验证的语言
 
 | 语言 | 适合 | 关键手段 |
 |---|---|---|
@@ -70,15 +70,19 @@ DESIGN.md 写完不等于风格成立。挑 3 个关键时刻（开场、转折�
 | 瑞士动态排版 | 公式 / 概念 | 12 栏网格、单一信号色、精确缓动 |
 | 数据叙事 | 数据 / 科学 | 图表操作即转场、注释钉在数据上、蓝红语义 |
 | 蓝图工程制图 | 几何 / 工程 | 青晒纸、白线、制图顺序、一次红印章 |
+| 白板讲解 | 科学 / 课程 | 暖白板、三色马克笔、书写顺序 |
+| 3b1b 暗场数学 | 线代 / 微积分 | 近黑底、蓝黄语义、先直觉后公式 |
 
-本仓库现有三套，全部改编自 [Lemo-Opuscar](https://github.com/lemomo-ai/lemo-opuscar)（MIT）：
+本仓库现有五套，除 `3b1b` 外均改编自 [Lemo-Opuscar](https://github.com/lemomo-ai/lemo-opuscar)（MIT）：
 
 - [`styles/swiss-motion/`](../../styles/swiss-motion/)：公式/排版，默认；
 - [`styles/dataviz/`](../../styles/dataviz/)：图表/数据；
-- [`styles/blueprint/`](../../styles/blueprint/)：几何/工程。
+- [`styles/blueprint/`](../../styles/blueprint/)：几何/工程；
+- [`styles/whiteboard/`](../../styles/whiteboard/)：科学/白板讲解；
+- [`styles/3b1b/`](../../styles/3b1b/)：暗场数学（Manim 社区 3b1b skill）。
 
 规范在 `STYLE.md`，数值在 `tokens.json`，`theme.py` 提供 `apply_config()` 与 `backdrop()`。
-项目 `DESIGN.md` 里写 `style: swiss-motion`（或 `dataviz` / `blueprint`）与 `style_version: 1.0.0`。
+项目 `DESIGN.md` 里写 `style: swiss-motion`（或 `dataviz` / `blueprint` / `whiteboard` / `3b1b`）与 `style_version: 1.0.0`。
 
 参考与示例统一从 HyperFrames 取：[examples](https://hyperframes.heygen.com/examples)、
 [catalog](https://hyperframes.heygen.com/catalog)、[frame.md](https://hyperframes.heygen.com/prompting/design-systems)。

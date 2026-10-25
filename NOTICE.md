@@ -8,7 +8,9 @@
 | [Manim Community](https://github.com/ManimCommunity/manim) | MIT | 可选渲染后端 |
 | [manimgx](https://github.com/academa-labs/manimgx) | MIT | 默认渲染后端 |
 | [SymPy](https://github.com/sympy/sympy) | BSD-3-Clause | `formula_check` |
-| [Lemo-Opuscar](https://github.com/lemomo-ai/lemo-opuscar) | MIT（风格文档/代码）· CC BY 4.0（demo 静帧） | `swiss-motion` / `dataviz` / `blueprint` 三个风格的改编来源；只取语法与规范，不打包 demo 代码 |
+| [Lemo-Opuscar](https://github.com/lemomo-ai/lemo-opuscar) | MIT（风格文档/代码）· CC BY 4.0（demo 静帧） | `swiss-motion` / `dataviz` / `blueprint` / `whiteboard` 的改编来源；只取语法与规范，不打包 demo 代码 |
+| [subinium/3b1b-style-animation-skill](https://github.com/subinium/3b1b-style-animation-skill) | MIT | `3b1b` 的配色与教学法来源；非 3Blue1Brown 官方项目 |
+| [adithya-s-k/manim_skill](https://github.com/adithya-s-k/manim_skill) | MIT | `3b1b` 的方法论参考（Manim 社区常用 skill） |
 | [FFmpeg](https://ffmpeg.org) | LGPL/GPL（取决于构建） | 渲染、后期、抽帧；**不打包**，由用户自行安装 |
 
 字体不随包分发；若你的 `DESIGN.md` 指定了第三方字体，请确认其许可（OFL / 商用授权）。

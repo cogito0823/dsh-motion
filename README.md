@@ -34,13 +34,15 @@
 
 ## 风格库
 
-默认 **瑞士动态排版（swiss-motion）**；另外两套按题材选。全部改编自 [Lemo-Opuscar](https://github.com/lemomo-ai/lemo-opuscar)（MIT），不是自创。
+默认 **瑞士动态排版（swiss-motion）**；另外四套按题材选。四套改编自 [Lemo-Opuscar](https://github.com/lemomo-ai/lemo-opuscar)，`3b1b` 来自 Manim 社区，均非自创。
 
 | 风格 | 适合 | 规范 |
 |---|---|---|
 | `swiss-motion`（默认） | 公式、定义、数据结论 | [STYLE](styles/swiss-motion/STYLE.md) · [tokens](styles/swiss-motion/tokens.json) |
 | `dataviz` | 趋势、比较、分布、科学数据 | [STYLE](styles/dataviz/STYLE.md) · [tokens](styles/dataviz/tokens.json) |
 | `blueprint` | 几何证明、结构、尺寸关系 | [STYLE](styles/blueprint/STYLE.md) · [tokens](styles/blueprint/tokens.json) |
+| `whiteboard` | 科学解释、课程、机制说明 | [STYLE](styles/whiteboard/STYLE.md) · [tokens](styles/whiteboard/tokens.json) |
+| `3b1b` | 线代、微积分、概率、神经网络 | [STYLE](styles/3b1b/STYLE.md) · [tokens](styles/3b1b/tokens.json) |
 
 **参考与示例统一用 HyperFrames 的库**：[examples](https://hyperframes.heygen.com/examples)、[catalog](https://hyperframes.heygen.com/catalog)、[frame.md](https://hyperframes.heygen.com/prompting/design-systems)。本仓库不再内置样片/分集；`showcase/` 只放可复现的演示。
 
@@ -48,11 +50,13 @@
 
 ## 演示
 
-三个类别各一支 10 秒内短片，记录出帧/渲染耗时：
+五个类别各一支 10 秒内短片，记录出帧/渲染耗时：
 
 - 公式：[showcase/swiss-euler](showcase/swiss-euler)
 - 数据：[showcase/dataviz-secant](showcase/dataviz-secant)
 - 几何：[showcase/blueprint-pythagoras](showcase/blueprint-pythagoras)
+- 白板：[showcase/whiteboard-derivative](showcase/whiteboard-derivative)
+- 暗场数学：[showcase/3b1b-unit-circle](showcase/3b1b-unit-circle)
 
 汇总见 [showcase/README.md](showcase/README.md)。
 

@@ -1,0 +1,11 @@
+{
+  "slug": "whiteboard",
+  "en": "Whiteboard Explainer",
+  "cn": "白板讲解",
+  "category_en": "Hand-drawn & Painting",
+  "category_cn": "手绘与绘画",
+  "uses": ["Explainers", "Online courses", "Science"],
+  "source": "https://github.com/lemomo-ai/lemo-opuscar/tree/main/styles/whiteboard",
+  "license": "style doc MIT; demo stills CC BY 4.0 (LemoLab)",
+  "implementation": "manimgx (theme.py + tokens.json)"
+}

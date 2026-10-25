@@ -53,7 +53,19 @@ HF 的卖点是 "same input, same frames, same output"：HTML + 可 seek 的动�
 - 可借鉴的三件事：`STYLE.md` 作为 style prompt、三张风格帧验收、分镜只在被要求时做；
 - 授权上，demo 静帧可商用但需署名 LemoLab；风格文件本身是 MIT。
 
-本仓库的选择：删除自创的 `dark-editorial`，改为 3 套改编自 Lemo 的风格（`swiss-motion` / `dataviz` / `blueprint`），每套按 `STYLE.md` + `tokens.json` + `theme.py` + `preview.jpg` 落地；外部参考统一指向 HF。
+本仓库的选择：删除自创的 `dark-editorial`，改为 4 套 Lemo 风格（`swiss-motion` / `dataviz` / `blueprint` / `whiteboard`）+ 1 套 Manim 社区的 `3b1b`，每套按 `STYLE.md` + `tokens.json` + `theme.py` + `preview.jpg` 落地；外部参考统一指向 HF。
+
+### 3b1b 风格：社区里谁在用
+
+3Blue1Brown 本人用的是 ManimGL，官方没有发布“风格规范”。社区里把它固化成 agent skill 的主要有三家：
+
+| 项目 | 规模 | 提供什么 |
+|---|---|---|
+| [adithya-s-k/manim_skill](https://github.com/adithya-s-k/manim_skill) | 约 1.2k stars | ManimCE / ManimGL 两套 best-practice skill，含大量可运行示例；是这类 skill 里用得最多的 |
+| [Yusuke710/manim-skill](https://github.com/Yusuke710/manim-skill) | 约 180 stars | 面向 agent 的 Manim 动画 skill |
+| [subinium/3b1b-style-animation-skill](https://github.com/subinium/3b1b-style-animation-skill) | 约 7 stars | 唯一把 3b1b 配色写成明确 token 的 skill（`#1c1c1c` / 蓝 `#3b82f6` / 黄 `#fbbf24`） |
+
+本仓库的 `3b1b` 取 subinium 的配色 + adithya 的方法论，按 manimgx 重写；不是 3Blue1Brown 官方项目。
 
 ## 3. 和 HyperFrames 怎么结合
 
@@ -222,7 +234,7 @@ DESIGN.md
 | `pictogram-motion` | Sports events / Visual identity / Event openers | 不选：偏活动/体育，公式场景弱 |
 | `dark-keynote` | Product launches / SaaS / Keynotes | 不选：与 `swiss-motion` 的排版角色重叠 |
 
-已落 **3 个核心**（`swiss-motion` / `dataviz` / `blueprint`）；`whiteboard`、`iso-infographic` 留作可选，等有真实题材再验。这个列表是筛选结果，不是永久名单——风格帧验收不过就换。
+已落 **5 套**：`swiss-motion` / `dataviz` / `blueprint` / `whiteboard` + `3b1b`。`iso-infographic`、`one-line`、`ascii-crt` 仍是候选，等有对应题材再验；这个列表不是永久名单——风格帧验收不过就换。
 
 落地方式：
 

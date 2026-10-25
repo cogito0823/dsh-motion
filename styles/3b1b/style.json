@@ -1,0 +1,12 @@
+{
+  "slug": "3b1b",
+  "en": "3Blue1Brown Style",
+  "cn": "3b1b 数学动画",
+  "category_en": "Math explainer",
+  "category_cn": "数学讲解",
+  "uses": ["Math education", "Linear algebra", "Calculus", "Neural networks"],
+  "source": "https://github.com/subinium/3b1b-style-animation-skill",
+  "secondary_source": "https://github.com/adithya-s-k/manim_skill",
+  "license": "MIT (style skills); unofficial tribute",
+  "implementation": "manimgx (theme.py + tokens.json)"
+}

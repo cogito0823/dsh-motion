@@ -30,6 +30,14 @@ const required = [
   'styles/blueprint/tokens.json',
   'styles/blueprint/theme.py',
   'styles/blueprint/preview.jpg',
+  'styles/whiteboard/STYLE.md',
+  'styles/whiteboard/tokens.json',
+  'styles/whiteboard/theme.py',
+  'styles/whiteboard/preview.jpg',
+  'styles/3b1b/STYLE.md',
+  'styles/3b1b/tokens.json',
+  'styles/3b1b/theme.py',
+  'styles/3b1b/preview.jpg',
   'docs/ai-native-motion.md',
   'docs/dev-loop.md',
   'README.md',
@@ -54,7 +62,7 @@ if (!framesOk) failed++
 console.log(`${typeof mod.apply === 'function' ? 'ok  ' : 'FAIL'} exports apply()`)
 if (mod.name !== 'motion' || typeof mod.apply !== 'function') failed++
 
-for (const slug of ['swiss-motion', 'dataviz', 'blueprint']) {
+for (const slug of ['swiss-motion', 'dataviz', 'blueprint', 'whiteboard', '3b1b']) {
   const tokens = JSON.parse(readFileSync(join(root, 'styles', slug, 'tokens.json'), 'utf8'))
   const ok = tokens.name === slug && tokens.version === '1.0.0'
   if (!ok) failed++

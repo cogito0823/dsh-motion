@@ -1,12 +1,14 @@
-# 展示片（3 个类别）
+# 展示片（5 个类别）
 
-每支都用真实场景代码渲染，记录**出帧**与**渲染**耗时。风格全部来自 `styles/`（改编自 Lemo-Opuscar）。
+每支都用真实场景代码渲染，记录**出帧**与**渲染**耗时。风格来自 `styles/`：4 套改编自 Lemo-Opuscar，`3b1b` 来自 Manim 社区。
 
 | 类别 | 短片 | 风格 | 帧检查（3 帧） | 渲染 | 成片 | 体积 |
 |---|---|---|---|---|---|---|
 | 公式 | [swiss-euler](swiss-euler) | `swiss-motion` | 2.4 s | 2.8 s | 6.2 s · 1080p30 | 0.1 MB |
 | 数据 | [dataviz-secant](dataviz-secant) | `dataviz` | 2.5 s | 3.1 s | 10.1 s · 1080p30 | 0.2 MB |
 | 几何 | [blueprint-pythagoras](blueprint-pythagoras) | `blueprint` | 4.3 s | 5.0 s | 6.9 s · 1080p30 | 0.5 MB |
+| 白板 | [whiteboard-derivative](whiteboard-derivative) | `whiteboard` | 4.3 s | 5.2 s | 9.6 s · 1080p30 | 0.6 MB |
+| 暗场数学 | [3b1b-unit-circle](3b1b-unit-circle) | `3b1b` | 2.6 s | 3.0 s | 10.3 s · 1080p30 | 0.3 MB |
 
 耗时是同一台机器、同一次运行的墙钟时间；机器负载不同会有波动。出帧用 `manimgx inspect -t ...`，不编码视频；渲染用 `manimgx render -r 1920x1080 --fps 30 --crf 20`。
 
@@ -33,6 +35,22 @@
 - 场景：[scene.py](blueprint-pythagoras/scene.py)
 - 预览：[preview.jpg](blueprint-pythagoras/preview.jpg)
 - 成片：[blueprint-pythagoras.mp4](blueprint-pythagoras/blueprint-pythagoras.mp4)
+
+## 4. 白板 · 割线为什么会变成切线
+
+暖白板 + 三支马克笔：黑色画结构，蓝色画正在滑动的 Q，橙色给最终切线。`Chalkboard SE` 手写体，按书写顺序出现。
+
+- 场景：[scene.py](whiteboard-derivative/scene.py)
+- 预览：[preview.jpg](whiteboard-derivative/preview.jpg)
+- 成片：[whiteboard-derivative.mp4](whiteboard-derivative/whiteboard-derivative.mp4)
+
+## 5. 暗场数学 · 单位圆上的旋转
+
+3b1b 配色：`#1c1c1c` 底、蓝 `#3b82f6` 向量、黄 `#fbbf24` 投影；先看旋转，最后收束到 `e^{iθ} = cosθ + i sinθ`。
+
+- 场景：[scene.py](3b1b-unit-circle/scene.py)
+- 预览：[preview.jpg](3b1b-unit-circle/preview.jpg)
+- 成片：[3b1b-unit-circle.mp4](3b1b-unit-circle/3b1b-unit-circle.mp4)
 
 ## 复现
 
