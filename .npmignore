@@ -1,0 +1,9 @@
+# 本地渲染/导入产物，不进包（files 白名单之外的兜底）
+**/__pycache__/
+*.pyc
+.DS_Store
+*.log
+*.storyboard.png
+*-contact.png
+projects/
+out/

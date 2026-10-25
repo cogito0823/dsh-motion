@@ -20,7 +20,7 @@
    ```
 
    - `"link:/Users/…/dsh-motion"` → 跑的是工作区代码
-   - `"0.4.2"`（semver）→ 跑的是 npm 包
+   - `"0.4.3"`（semver）→ 跑的是 npm 包
 
    因为只有一个依赖字段，**同一时刻物理上只可能装一份**，不会出现两个 `motion_*` 抢注册。
 
@@ -42,7 +42,7 @@
 同样两步，第 3 步把目标换成版本号：
 
 ```
-dsh-motion@0.4.2
+dsh-motion@0.4.3
 ```
 
 装完 spec 变回 semver，`node_modules/dsh-motion` 是真实目录。
@@ -50,7 +50,7 @@ dsh-motion@0.4.2
 ## 3. 验证（三条命令 + 一个工具）
 
 ```bash
-# 期望：link:/Users/cogito/Documents/dsh/dsh-motion  或  0.4.2
+# 期望：link:/Users/cogito/Documents/dsh/dsh-motion  或  0.4.3
 node -p "require(process.env.HOME+'/.dsh/profiles/desktop/package.json').dependencies['dsh-motion']"
 
 # 期望：带 -> 箭头 = 本地；真实目录 = npm
@@ -63,8 +63,8 @@ tail -2 ~/.dsh/logs/motion.log
 以及在 Harness 里跑一次 `motion_doctor`，**第一行「插件来源」**是最终裁决：
 
 ```
-0.4.2 · 本地 checkout · /Users/cogito/Documents/dsh/dsh-motion/lib
-0.4.2 · npm 安装     · /Users/cogito/.dsh/profiles/desktop/node_modules/dsh-motion/lib
+0.4.3 · 本地 checkout · /Users/cogito/Documents/dsh/dsh-motion/lib
+0.4.3 · npm 安装     · /Users/cogito/.dsh/profiles/desktop/node_modules/dsh-motion/lib
 ```
 
 （Node 会把符号链接解析成真实路径，所以 link 安装显示的是仓库路径。）
@@ -98,7 +98,7 @@ P="/Applications/DeepSeek Harness.app/Contents/Resources/runtime/primary-runtime
 node "$P" --dir ~/.dsh/profiles/desktop add "link:/Users/cogito/Documents/dsh/dsh-motion"
 
 # 切回 npm
-node "$P" --dir ~/.dsh/profiles/desktop add "dsh-motion@0.4.2"
+node "$P" --dir ~/.dsh/profiles/desktop add "dsh-motion@0.4.3"
 ```
 
 本机全局也装了同版本 `pnpm 11.28.5`（在 PATH 里），所以 `pnpm --dir …` 同样可用。
