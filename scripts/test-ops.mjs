@@ -10,10 +10,11 @@
  * 用法：node scripts/test-ops.mjs
  */
 import assert from 'node:assert/strict'
-import { existsSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { assertApproved, readApprovals } from '../lib/approvals.js'
 import { pluginSource } from '../lib/doctor.js'
 import { importFresh } from '../lib/fresh.js'
 import {
@@ -212,6 +213,36 @@ test('pluginSource 版本与 lib 路径自洽', () => {
   assert.ok(existsSync(join(source.lib, 'index.js')))
   assert.ok(existsSync(join(source.lib, 'doctor.js')))
 })
+
+// —— approvals：工具层的开工确认硬门 ——
+{
+  const dir = mkdtempSync(join(tmpdir(), 'dsh-approvals-gate-'))
+  const scene = join(dir, 'scene.py')
+  writeFileSync(scene, 'pass\n')
+  let missing = false
+  try { assertApproved(scene) } catch { missing = true }
+  if (missing) console.log('ok   assertApproved 拒绝缺少 APPROVALS.json')
+  else { failed++; console.log('FAIL assertApproved 拒绝缺少 APPROVALS.json') }
+
+  mkdirSync(dir, { recursive: true })
+  writeFileSync(join(dir, 'APPROVALS.json'), JSON.stringify({
+    mode: 'standard',
+    stages: {
+      requirements: { label: '需求', status: 'approved' },
+      delivery: { label: '交付清单', status: 'pending' },
+      start: { label: '开工', status: 'pending' },
+    },
+  }))
+  const report = readApprovals(scene)
+  if (report.status === 'pending' && report.missing.includes('交付清单')) {
+    console.log('ok   readApprovals 报出缺失的交付清单')
+  } else { failed++; console.log('FAIL readApprovals 报出缺失的交付清单') }
+
+  let blocked = false
+  try { assertApproved(scene) } catch { blocked = true }
+  if (blocked) console.log('ok   assertApproved 拒绝 pending 阶段')
+  else { failed++; console.log('FAIL assertApproved 拒绝 pending 阶段') }
+}
 
 // —— importFresh：改文件后按 mtime 重新 import（热加载的基础） ——
 {

@@ -77,6 +77,16 @@ tail -2 ~/.dsh/logs/motion.log
 - 完全绕开 Harness：`node scripts/dev.mjs frames|render|probe|doctor ...`；
 - 细节与限制见 [docs/dev-loop.md](docs/dev-loop.md)。
 
+## 3.6 开发时绕过确认门
+
+`motion_render` 默认要求 `APPROVALS.json`。维护者本地调试可临时：
+
+```bash
+DSH_MOTION_ALLOW_UNCONFIRMED=1
+```
+
+或在插件配置里 `allowUnconfirmed: true`。**不要**把它写进用户默认配置。
+
 ## 4. 兜底：插件管理器不收目录时
 
 用 App 自带的那份 pnpm 直接改依赖，效果与 GUI 完全一致（App 内部也是这么装的）：

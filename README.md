@@ -14,7 +14,7 @@
 |---|---|
 | `motion_frames` | **极简模式（默认）**：直接从场景出帧，不生成视频、不用 HF；几秒拿到 storyboard PNG 与 layout 问题 |
 | `motion_doctor` | 环境自检（Node / FFmpeg / Python venv / manimgx / sympy / Chrome / HyperFrames） |
-| `motion_render` | 渲染 Manim / manimgx 场景，可加运动模糊、颗粒、暗角、调色 |
+| `motion_render` | 渲染 Manim / manimgx 场景；未通过 `APPROVALS.json` 确认门的项目会拒绝渲染 |
 | `motion_probe` | 成片抽帧拼 contact sheet，报告全黑 / 过曝的空镜 |
 | `formula_check` | 用 SymPy 判断两个表达式是否恒等 |
 
@@ -76,6 +76,8 @@
 4. `DESIGN.md` + 3 张风格帧（只出帧，不渲染）
 5. 交付清单（尺寸 / fps / 时长 / 文件 / 音频 / 字幕）
 6. **用户明确说“可以开始 / 开始做 / 按这个执行”**
+
+`motion_render` 会读项目里的 `APPROVALS.json`；没有，或 `delivery` / `start` 等阶段未全部 approved，直接报错，不会偷偷渲染。
 
 没听到第 6 步的明确指令，不写完整场景、不出全片。清单模板见
 [skills/animation-router/references/confirmation.md](skills/animation-router/references/confirmation.md)。
