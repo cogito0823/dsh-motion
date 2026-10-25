@@ -6,7 +6,7 @@ on:
       - "v*"
 
 permissions:
-  contents: read
+  contents: write # create the GitHub Release for the pushed tag
   id-token: write # OIDC: npm Trusted Publishing, no token, no OTP
 
 jobs:
@@ -44,3 +44,15 @@ jobs:
 
       - name: Publish (Trusted Publishing)
         run: npm publish --access public --provenance
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "GitHub Release already exists: $GITHUB_REF_NAME"
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              --title "dsh-motion ${GITHUB_REF_NAME#v}" \
+              --generate-notes
+          fi
