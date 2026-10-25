@@ -4,3 +4,13 @@ node_modules/
 *.log
 __pycache__/
 *.pyc
+
+# 渲染中间产物（manimgx / motion_probe 自动生成，不提交）
+*.storyboard.png
+*.storyboard-*.png
+check-*.png
+check.storyboard*.png
+*-contact.png
+
+# 分集音频（由 make_audio.py 生成）
+*.wav
