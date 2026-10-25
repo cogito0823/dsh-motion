@@ -11,8 +11,8 @@
 | `STYLE.md` | 定位、颜色、字体、版面、运动、声音、检查清单 |
 | `tokens.json` | 颜色、字体、运动、音频的可复用数值；改这些先改这里 |
 | `theme.py` | 读取 tokens，提供 `apply_config()` 与 `backdrop()` |
-| `reference/` | 参考场景与音频源码，从 `episodes/euler` 复制 |
 | `preview.jpg` | 参考帧，来自 `episodes/euler` |
+| 参考实现 | [scene.py](https://github.com/cogito0823/dsh-motion/blob/main/episodes/euler/scene.py) · [make_audio.py](https://github.com/cogito0823/dsh-motion/blob/main/episodes/euler/make_audio.py)（在 Git 仓库，不随包分发） |
 
 ## 在场景里用
 

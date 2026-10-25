@@ -164,7 +164,7 @@ reference: episodes/euler
 - 轨迹用 `TracedPath`：15 宽 10% 的辉光 + 4.6 宽 95% 的主线；
 - 角度弧半径 0.56，`θ` 标签 25，跟随弧的中间角。
 
-参考实现：[reference/scene.py](reference/scene.py) 的 `arm_glow()` / `trail_glow()`。
+参考实现：[episodes/euler/scene.py](https://github.com/cogito0823/dsh-motion/blob/main/episodes/euler/scene.py) 的 `arm_glow()` 与 `trail_glow`。
 
 ### 右栏
 
@@ -214,7 +214,7 @@ reference: episodes/euler
 
 ## 6. 声音
 
-参考实现：[reference/make_audio.py](reference/make_audio.py)。
+参考实现：[episodes/euler/make_audio.py](https://github.com/cogito0823/dsh-motion/blob/main/episodes/euler/make_audio.py)。
 
 - A 大调长音：A2 110 / E3 164.81 / A3 220 / C#4 277.18 / E4 329.63；
 - 极轻的低通空气噪声；
@@ -278,4 +278,4 @@ reference: episodes/euler
 - 只改分集参数：不改本文件，在分集 `DESIGN.md` 里覆盖；
 - 改全项目默认：改本文件 + `tokens.json` + `theme.py`，并升版本号；
 - 颜色、字体、时间表与音频参数以 `tokens.json` 为准；`theme.py` 从它读取。
-- 版面坐标与组件线宽以本文件为准；改这些时同步改 `reference/scene.py`。
+- 版面坐标与组件线宽以本文件为准；改这些时同步改 `episodes/euler/scene.py`。
