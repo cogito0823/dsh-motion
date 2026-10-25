@@ -130,22 +130,43 @@ npx hyperframes@0.8.193 render <project> -o out.mp4 --quality delivery
 
 ## 发版（维护者）
 
-首次发布会把名字与 2FA 绑好；之后用 GitHub Actions 的 Trusted Publishing，不需要 token，也不需要 OTP。
+首次发布会把包名与 2FA 绑好；之后走 GitHub Actions 的 **Trusted Publishing**（OIDC），不需要 token、不需要 OTP，自动附带 **provenance 签名**。
 
-1. 在 npm 包设置里绑定可信发布者：**Package → Settings → Trusted Publisher → GitHub Actions**
-   - owner: `cogito0823`
-   - repository: `dsh-motion`
-   - workflow: `release.yml`
-2. 然后：
+### 一次性绑定
+
+npm 包设置 → **Settings → Trusted Publisher → GitHub Actions**：
+
+| 字段 | 值 |
+|---|---|
+| Organization or user | `cogito0823` |
+| Repository | `dsh-motion` |
+| Workflow filename | `release.yml` |
+| Environment | 留空 |
+
+Allowed actions：勾 **`npm publish`** 即可（`npm dist-tag` 用不到）。
+
+### 发一版
 
 ```bash
 npm version patch          # 0.1.0 -> 0.1.1
-git push --follow-tags     # 触发 release.yml
+git push --follow-tags     # 触发 .github/workflows/release.yml
 ```
 
-工作流会校验 tag 与 `package.json` 一致、跑 check/smoke，再 `npm publish --provenance`。
+工作流会：校验 tag 与 `package.json` 版本一致 → `check` + `smoke` → `npm publish --provenance --access public`。
 
-若工作流失败，退回手动发布：`npm publish --access public`（需 passkey 或 OTP）。
+### 两个必须知道的坑
+
+1. **npm CLI 必须 ≥ 11.5.1**。Node 22 自带的 npm 10 不支持 OIDC，会把占位 token 发出去，registry 返回误导性的 `404 not in this registry`。工作流里已加 `npm install -g npm@latest`。
+2. **发布后不是立刻可见**。CLI 会打印 `Your package is being processed and may take a few minutes to become available`，通常 1–2 分钟后 `npm view` 才查得到。这不是失败。
+
+### 验证
+
+```bash
+npm view dsh-motion version
+npm view dsh-motion@<version> dist.attestations   # 应含 provenance / SLSA v1
+```
+
+npm 包页面会出现 **“Built and signed on GitHub Actions”**。
 
 ## 许可
 
