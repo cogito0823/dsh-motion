@@ -2,8 +2,8 @@
   "generated_at": "2026-10-25T10:22:00+08:00",
   "machine": "macOS (same host as dsh)",
   "commands": {
-    "frames": "manimgx inspect <scene> -t <times>",
-    "render": "manimgx render <scene> -r 1920x1080 --fps 30 --crf 20 -o <slug>.mp4"
+    "frames": "node scripts/dev.mjs frames showcase/<slug>/scene.py <times>",
+    "render": "node scripts/dev.mjs render showcase/<slug>/scene.py --explore --out showcase/<slug>/final/<slug>.mp4"
   },
   "demos": [
     {
@@ -101,5 +101,7 @@
       },
       "layout_problems": 0
     }
-  ]
+  ],
+  "version": "0.9.0",
+  "note": "timings 为 2026-10-25 旧命令基线；0.9.0 输出路径改为 out/ 与 final/。"
 }

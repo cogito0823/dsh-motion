@@ -8,17 +8,22 @@
 **代码生成的数学 / 科普动画**，给 [DeepSeek Harness](https://github.com/deepseek-ai) 用的插件。
 画面由代码逐帧生成，不经过任何文生视频（text-to-video）模型。
 
-提供五个工具：
+提供六个工具：
 
 | 工具 | 作用 |
 |---|---|
-| `motion_frames` | **极简模式（默认）**：直接从场景出帧，不生成视频、不用 HF；几秒拿到 storyboard PNG 与 layout 问题 |
-| `motion_doctor` | **环境预检（一次调用）**：运行时 + 中文字体 + 公式转换 + 常用 API 签名；按指纹缓存 12 h |
-| `motion_render` | 渲染 Manim / manimgx 场景；未通过 `APPROVALS.json` 确认门的项目会拒绝渲染 |
-| `motion_probe` | 成片抽帧拼 contact sheet，报告全黑 / 过曝的空镜 |
+| `motion_frames` | **极简模式（默认）**：直接从场景出帧，不生成视频、不用 HF；几秒拿到 storyboard PNG 与 layout 问题；输出落 `<project>/out/frames` |
+| `motion_doctor` | **环境预检（一次调用）**：运行时 + 真实可用字体清单 + 公式转换 + API/函数/rate；按指纹缓存 12 h（不再按 Node 版本分叉） |
+| `motion_setup` | **环境自愈**：建 venv、装 manimgx/sympy（`tts=true` 加 edge-tts）；在宿主进程执行，不受模型 bash 沙箱限制 |
+| `motion_render` | 渲染 Manim / manimgx 场景；必须有 `motion.project.json`，工具路径每次走平台审批，`APPROVALS.json` 是前置账本；输出落 `<project>/out/render` |
+| `motion_probe` | 成片抽帧拼 contact sheet，报告全黑/过曝，并给出 fps/帧数/VFR/CFR |
 | `formula_check` | 用 SymPy 判断两个表达式是否恒等 |
 
-外加三个技能：`animation-router`（题材路由）、`design-spec`（写 DESIGN.md）、`qa-rubric`（交付自检）。
+外加三个技能：`animation-router`（题材路由 + API/命令速查）、`design-spec`（写 DESIGN.md）、`qa-rubric`（交付自检）。
+它们由插件通过 `ctx.skills` 注册，**安装后自动出现在会话技能目录**，不需要再复制到 `~/.dsh/skills`。
+
+模块边界、进程拓扑、数据流与不变量见 [ARCHITECTURE.md](ARCHITECTURE.md)；设计理由与外部调研见
+[docs/ai-native-motion.md](docs/ai-native-motion.md)。
 
 ## 两种模式
 
@@ -31,6 +36,28 @@
 | 什么时候用 | 写场景、调节奏、改版式 | 定稿后出片 |
 
 先出帧、改到满意，再决定要不要渲染成片。`motion_probe` 是给已经存在的视频做体检的，不是默认步骤。
+
+## 项目骨架、时间轴与账本
+
+新项目用脚手架起，不要从空白开始：
+
+```bash
+node scripts/scaffold.mjs ~/dsh-motion-projects/my-film --title "欧拉公式" --duration 30
+node scripts/timeline-check.mjs ~/dsh-motion-projects/my-film --strict
+node scripts/run-report.mjs ~/dsh-motion-projects/my-film --wall 752
+```
+
+- 模板生成 `motion.project.json` / `scene.py` / `timeline.json` / `timeline.py` / `narration.json` / `assemble.py` / `DESIGN.md`；
+- **一个项目 = 一部片子**，默认放在 `~/dsh-motion-projects/<slug>`（可用 `MOTION_PROJECTS_HOME` 改）；
+- `motion.project.json` 是唯一项目根；`APPROVALS.json` / `out/` / `audio/` / `.dsh-motion/` 都相对它，**父目录账本不会继承**；
+- 正式 `motion_render` 必须有项目根；临时场景只能出帧，或用 `--explore` 调试；
+- 已有老项目没有 manifest：`node scripts/project-adopt.mjs <dir>` 补一个，不移动文件；
+- `timeline.py` 的 `TimedScene.cue()` 在运行时对比 `self.time`，落后超过 0.35s 打印 `[late]`；
+- `timeline-check` 检查 cue 乱序/越界、旁白晚于画面、旁白压到下一拍；
+- 每个项目写 `<project>/.dsh-motion/metrics.jsonl`，`run-report` 汇总 active / wall，避免把 compute 百分比当端到端收益；
+- `motion_probe` 报 `vfr:true` 时，raw 只是中间片，交付前用 `assemble.py` 或 `motion_render` 归一成 CFR。
+
+旁白 `narrate` 默认按文本/音色/语速缓存并并发 3 句；`mix --report-gaps` 输出每个旁白间隙的 dB。
 
 ## 风格库
 
@@ -64,9 +91,12 @@
 - 白板：[showcase/whiteboard-derivative](showcase/whiteboard-derivative)
 - 暗场数学：[showcase/3b1b-unit-circle](showcase/3b1b-unit-circle)
 
+每个 showcase 目录都是标准项目（带 `motion.project.json`）；成片在 `final/`，生成物在 `out/`。
 汇总见 [showcase/README.md](showcase/README.md)。
 
 ## 开工前确认
+
+`requirements` / `start` 的确认必须带 `--confirmation <ask_user_question id>`；brief 哈希由脚本自动生成。
 
 顺序是硬性的：
 
@@ -77,14 +107,17 @@
 5. 交付清单（尺寸 / fps / 时长 / 文件 / 音频 / 字幕）
 6. **用户明确说“可以开始 / 开始做 / 按这个执行”**
 
-`motion_render` 会读项目里的 `APPROVALS.json`；没有，或 `delivery` / `start` 等阶段未全部 approved，直接报错，不会偷偷渲染。
+`motion_render` 在工具路径上每次都会走 Harness 的 `ctx.approval.request`，让用户在界面里
+逐次确认；用户拒绝则渲染失败。`APPROVALS.json` 仍是前置条件（CLI/无平台路径会校验）。
+拒绝、`--explore` 绕过和平台审批都会写进 `<project>/.dsh-motion/approvals.jsonl`，不会静默消失。
 
 `motion_frames` 也会拦：项目有账本、但需求没落「时长 / 画幅 / 交付」时，直接拒绝出帧。第一步永远是问这三项，然后落账：
 
 ```bash
 npm run approvals -- init <project> --mode standard
 npm run approvals -- set <project> requirements approved \
-  --duration 30s --aspect 1920x1080 --delivery narrated --note "用户确认"
+  --duration 30s --aspect 1920x1080 --delivery narrated \
+  --confirmation q_... --note "用户确认"
 ```
 
 没听到第 6 步的明确指令，不写完整场景、不出全片。清单模板见
@@ -94,7 +127,7 @@ npm run approvals -- set <project> requirements approved \
 
 ```bash
 npm run approvals -- init <project> --mode light
-npm run approvals -- set <project> start approved --note "用户说可以开始"
+npm run approvals -- set <project> start approved --confirmation q_... --note "用户说可以开始"
 npm run approvals -- check <project>
 ```
 
@@ -113,7 +146,8 @@ npm install -g dsh-motion
 motion_doctor
 ```
 
-它把运行时、中文字体、公式转换和常用 API 签名一次带回（按机器指纹缓存 12 小时，重复调用几乎不耗时）。
+它把运行时、真实可用字体、公式转换和 API/函数/rate 一次带回（按机器指纹缓存 12 小时，重复调用几乎不耗时）。
+`ready.math=false` 时调用 `motion_setup`，不要自己用 bash 建 venv——venv 在 workspace 外，会被沙箱拒绝。
 
 ## 依赖
 
@@ -128,6 +162,12 @@ motion_doctor
 ### 准备 Python 环境
 
 ```bash
+# 推荐：插件内 motion_setup，或命令行（幂等，缺什么补什么）
+npm run setup
+npm run setup -- --tts     # 旁白依赖 edge-tts / numpy
+npm run setup -- --force   # 删掉旧 venv 重建
+
+# 手动兜底
 python3 -m venv ~/.dsh/data/dsh-motion/venv
 ~/.dsh/data/dsh-motion/venv/bin/pip install manimgx sympy
 ```
@@ -144,22 +184,35 @@ Windows 把 `bin/` 换成 `Scripts\`，可执行文件加 `.exe`。
       name: dsh-motion
       config:
         motionHome: ~/.dsh/data/dsh-motion
+        projectsHome: ~/dsh-motion-projects        # 用户项目工作区
         venv: ~/.dsh/data/dsh-motion/venv
+        python: /opt/homebrew/bin/python3.13   # 可选；默认找 python3.13/3.12/3.11/3
+        packages: [manimgx, sympy, manimgx-fonts, manimgx-fonts-cjk]  # 可选；motion_setup 安装清单
+        tts: false                             # 可选；true 时追加 edge-tts / numpy
         ffmpeg: /opt/homebrew/bin/ffmpeg
 ```
 
-解析顺序：插件配置 → 环境变量（`MOTION_HOME` / `MOTION_VENV` / `MOTION_FFMPEG`）→ 默认目录 → 系统 PATH。
+解析顺序：插件配置 → 环境变量（`MOTION_HOME` / `MOTION_PROJECTS_HOME` / `MOTION_VENV` / `MOTION_FFMPEG`）→ 默认目录 → 系统 PATH。
 
 ## 快速开始
+
+### 0. 先建项目
+
+```bash
+node scripts/scaffold.mjs ~/dsh-motion-projects/demo --title "演示" --duration 10
+cd ~/dsh-motion-projects/demo
+```
+
+项目根由 `motion.project.json` 标识；正式渲染必须能找到它。临时场景可以只出帧，但不要用于交付。
 
 ### 1. 写一个 Manim 场景
 
 ```python
-# scenes/derivative.py
+# scene.py
 import manimgx as m
 from manimgx import *
 
-class Derivative(Scene):
+class Demo(Scene):
     def construct(self):
         ax = Axes(x_range=[-2, 2], y_range=[-1, 4])
         self.play(Create(ax))
@@ -170,7 +223,7 @@ class Derivative(Scene):
 
 ```jsonc
 // motion_frames
-{ "file": "/abs/path/scenes/derivative.py", "times": ["1.2", "4.5", "end"] }
+{ "file": "/Users/you/dsh-motion-projects/demo/scene.py", "times": ["1.2", "4.5", "end"] }
 ```
 
 返回 `storyboard` PNG 路径与 layout 问题清单（实测 3–4 帧约 3–5 秒）。看图改场景，不满意就再来一轮；这一步不生成 mp4，也不需要 HyperFrames。
@@ -179,7 +232,7 @@ class Derivative(Scene):
 
 ```jsonc
 // motion_render
-{ "file": "/abs/path/scenes/derivative.py", "scene": "Derivative", "width": 1920, "height": 1080, "fps": 60 }
+{ "file": "/Users/you/dsh-motion-projects/demo/scene.py", "scene": "Demo", "width": 1920, "height": 1080, "fps": 60 }
 ```
 
 ### 4. 公式先验
@@ -215,13 +268,13 @@ python3 -m venv .venv-tts
 生成逐句音频、词级 `timing.json` 和 `captions.srt`：
 
 ```bash
-npm run narrate -- projects/foo --voice zh-CN-XiaoxiaoNeural --rate +10%
+npm run narrate -- ~/dsh-motion-projects/foo --voice zh-CN-XiaoxiaoNeural --rate +10%
 ```
 
 混音（可选音乐、自动 duck、−14 LUFS / −1 dBTP），需要时直接压进现有视频：
 
 ```bash
-npm run mix -- projects/foo --music assets/bed.wav \
+npm run mix -- ~/dsh-motion-projects/foo --music assets/bed.wav \
   --mux out/foo.mp4 --mux-out out/foo-narrated.mp4
 ```
 
@@ -236,7 +289,7 @@ npm run mix -- projects/foo --music assets/bed.wav \
 没有网络时：
 
 ```bash
-npm run narrate -- projects/foo --provider say --voice Tingting --rate 230
+npm run narrate -- ~/dsh-motion-projects/foo --provider say --voice Tingting --rate 230
 ```
 
 `say` 不提供词级时间，字幕按 token 权重估算，并在 `timing.json` 标 `estimated`。Python 解释器可用 `--python` 或 `MOTION_TTS_PYTHON` 指定。
@@ -265,7 +318,7 @@ npx hyperframes render -o out.mp4
 
 | 现象 | 原因 | 处理 |
 |---|---|---|
-| `找不到 Python 虚拟环境` | 未建 venv | 按上文创建，并 `pip install manimgx sympy` |
+| `找不到 Python 虚拟环境` | 未建 venv | 调用 `motion_setup`（或 `npm run setup`），不要手动在 workspace 外建 |
 | `找不到渲染器: …/manimgx` | venv 里没装 | `pip install manimgx` |
 | `motion_frames` 报 layout 问题 | 压字 / 出画 / 字号过小 | 按返回的 `[n]` 逐条改场景；退出码 1 是“有问题”，不是崩溃 |
 | 渲染断字 / 字体回退 | 字体未声明 `@font-face` | 把 `.woff2` 放工程 `assets/fonts/` 并声明 |
@@ -284,8 +337,8 @@ npx hyperframes render -o out.mp4
 日常改代码**不需要重装**：link 安装一次后，改 `lib/ops.js` / `lib/doctor.js` 会在下一次工具调用时按 mtime 热加载；只有改工具名/参数 schema 才需要 `⌘⇧R`。风格、`tokens.json`、场景文件本来就是运行时读取，不用重启。详见 [docs/dev-loop.md](docs/dev-loop.md)，也可以完全绕开 Harness：
 
 ```bash
-node scripts/dev.mjs frames showcase/swiss-euler/scene.py 1,3,end   # → out/swiss-euler-frames.png
-node scripts/dev.mjs render showcase/swiss-euler/scene.py --fps 30   # → out/swiss-euler.mp4
+node scripts/dev.mjs frames showcase/swiss-euler/scene.py 1,3,end   # → showcase/swiss-euler/out/frames/scene.png
+node scripts/dev.mjs render --explore showcase/swiss-euler/scene.py --fps 30   # 演示项目无账本，仅调试
 ```
 
 ## 发版（维护者）

@@ -1,7 +1,8 @@
 # 维护手册
 
 面向维护者：怎么在「本地 checkout」和「npm 发布版」之间切换插件，以及切换前后怎么自证。
-普通使用者不需要读这一页。
+普通使用者不需要读这一页。模块边界、数据流与不变量见
+[ARCHITECTURE.md](ARCHITECTURE.md)。
 
 ## 0. 先记住三条事实
 
@@ -20,7 +21,7 @@
    ```
 
    - `"link:/Users/…/dsh-motion"` → 跑的是工作区代码
-   - `"0.6.0"`（semver）→ 跑的是 npm 包
+   - `"0.9.0"`（semver）→ 跑的是 npm 包
 
    因为只有一个依赖字段，**同一时刻物理上只可能装一份**，不会出现两个 `motion_*` 抢注册。
 
@@ -42,7 +43,7 @@
 同样两步，第 3 步把目标换成版本号：
 
 ```
-dsh-motion@0.6.0
+dsh-motion@0.9.0
 ```
 
 装完 spec 变回 semver，`node_modules/dsh-motion` 是真实目录。
@@ -50,31 +51,32 @@ dsh-motion@0.6.0
 ## 3. 验证（三条命令 + 一个工具）
 
 ```bash
-# 期望：link:/Users/cogito/Documents/dsh/dsh-motion  或  0.6.0
+# 期望：link:/Users/cogito/Documents/dsh/dsh-motion  或  0.9.0
 node -p "require(process.env.HOME+'/.dsh/profiles/desktop/package.json').dependencies['dsh-motion']"
 
 # 期望：带 -> 箭头 = 本地；真实目录 = npm
 ls -ld ~/.dsh/profiles/desktop/node_modules/dsh-motion
 
-# 期望：最后一条 registered 5 tools 是刚才重启的时间
+# 期望：最后一条 registered 6 tools 是刚才重启的时间
 tail -2 ~/.dsh/logs/motion.log
 ```
 
 以及在 Harness 里跑一次 `motion_doctor`，**第一行「插件来源」**是最终裁决：
 
 ```
-0.6.0 · 本地 checkout · /Users/cogito/Documents/dsh/dsh-motion/lib
-0.6.0 · npm 安装     · /Users/cogito/.dsh/profiles/desktop/node_modules/dsh-motion/lib
+0.9.0 · 本地 checkout · /Users/cogito/Documents/dsh/dsh-motion/lib
+0.9.0 · npm 安装     · /Users/cogito/.dsh/profiles/desktop/node_modules/dsh-motion/lib
 ```
 
 （Node 会把符号链接解析成真实路径，所以 link 安装显示的是仓库路径。）
 
 ## 3.5 日常开发（不用反复重启）
 
-- 只改 `lib/ops.js` / `lib/doctor.js`：下一次工具调用按 mtime 热加载，不用重启；
+- 只改 `lib/ops.js` / `lib/doctor.js` / `lib/setup.js`：下一次工具调用按 mtime 热加载，不用重启；
+- 改 `lib/skills.js` / `skills/*`：provider 在 `apply()` 注册，需 `⌘⇧R`；skill 正文改完不用重启；
 - 改 `styles/*`、`showcase/*`、`tokens.json`：运行时读取，不用重启；
 - 改工具名 / 描述 / 参数 schema（`lib/index.js`）：需要 `⌘⇧R`；
-- 完全绕开 Harness：`node scripts/dev.mjs frames|render|probe|doctor ...`；
+- 完全绕开 Harness：`node scripts/dev.mjs frames|render|probe|doctor|setup ...`；
 - 细节与限制见 [docs/dev-loop.md](docs/dev-loop.md)。
 
 ## 3.6 开发时绕过确认门
@@ -82,7 +84,7 @@ tail -2 ~/.dsh/logs/motion.log
 `motion_render` 默认要求 `APPROVALS.json`。维护者本地调试可临时：
 
 ```bash
-DSH_MOTION_ALLOW_UNCONFIRMED=1
+node scripts/dev.mjs render <scene.py> --explore
 ```
 
 或在插件配置里 `allowUnconfirmed: true`。**不要**把它写进用户默认配置。
@@ -98,7 +100,7 @@ P="/Applications/DeepSeek Harness.app/Contents/Resources/runtime/primary-runtime
 node "$P" --dir ~/.dsh/profiles/desktop add "link:/Users/cogito/Documents/dsh/dsh-motion"
 
 # 切回 npm
-node "$P" --dir ~/.dsh/profiles/desktop add "dsh-motion@0.6.0"
+node "$P" --dir ~/.dsh/profiles/desktop add "dsh-motion@0.9.0"
 ```
 
 本机全局也装了同版本 `pnpm 11.28.5`（在 PATH 里），所以 `pnpm --dir …` 同样可用。

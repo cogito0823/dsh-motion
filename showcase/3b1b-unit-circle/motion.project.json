@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "id": "showcase-3b1b-unit-circle",
+  "name": "单位圆旋转 · 3b1b",
+  "createdAt": "2026-10-26T04:00:00+08:00",
+  "primaryScene": "scene.py",
+  "kind": "showcase"
+}

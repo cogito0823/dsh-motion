@@ -65,7 +65,8 @@
 ```bash
 node scripts/approvals.mjs init <project> --mode light
 node scripts/approvals.mjs set <project> requirements approved \
-  --duration 30s --aspect 1920x1080 --delivery narrated --note "用户确认"
+  --duration 30s --aspect 1920x1080 --delivery narrated \
+  --confirmation q_... --note "用户确认"
 node scripts/approvals.mjs set <project> <stage> approved --note "用户确认"
 node scripts/approvals.mjs check <project>
 ```

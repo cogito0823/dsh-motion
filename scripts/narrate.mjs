@@ -2,9 +2,9 @@
 /**
  * 逐句旁白：文本 → 音频 + 词级时间轴 + SRT。
  *
- *   node scripts/narrate.mjs projects/foo
- *   node scripts/narrate.mjs projects/foo --provider edge --voice zh-CN-XiaoxiaoNeural --rate +10%
- *   node scripts/narrate.mjs projects/foo --provider say --voice Tingting --rate 230
+ *   node scripts/narrate.mjs ~/dsh-motion-projects/foo
+ *   node scripts/narrate.mjs ~/dsh-motion-projects/foo --provider edge --voice zh-CN-XiaoxiaoNeural --rate +10%
+ *   node scripts/narrate.mjs ~/dsh-motion-projects/foo --provider say --voice Tingting --rate 230
  *
  * 免费路线：edge-tts（无需账号，带词级边界）；离线兜底：macOS say。
  * 产物默认写到 <project>/audio/<provider>/。
@@ -13,7 +13,9 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
-import { ffprobeDuration, repoRoot, resolvePython, run, srtTime, wrapCaption } from './lib/audio.mjs'
+import { ffprobeDuration, repoRoot, resolvePython, run, runAsync, srtTime, wrapCaption } from './lib/audio.mjs'
+import { recordMetric } from '../lib/metrics.js'
+import { acquireProjectLock } from '../lib/project.js'
 
 const HELP = `用法: node scripts/narrate.mjs <project> [选项]
 
@@ -28,6 +30,7 @@ const HELP = `用法: node scripts/narrate.mjs <project> [选项]
   --gap <sec>           两句之间的最小间隔，默认 0.12
   --shift               起点早于上一句结束时，顺延而不是只警告
   --force               忽略缓存，全部重生成
+  --concurrency <n>     并发合成句数，默认 3（上限 6）
   --json                输出机器可读结果
 `
 
@@ -125,9 +128,9 @@ function estimateWords(text, duration) {
   })
 }
 
-function edgeOne({ python, text, voice, rate, pitch, volume, out, wordsOut, proxy, retries }) {
+async function edgeOne({ python, text, voice, rate, pitch, volume, out, wordsOut, proxy, retries }) {
   const helper = join(repoRoot, 'scripts', 'lib', 'tts_edge.py')
-  run(python, [
+  await runAsync(python, [
     helper,
     `--text=${text}`,
     `--voice=${voice}`,
@@ -162,6 +165,21 @@ function sayOne({ text, voice, rate, out }) {
     words: estimateWords(text, duration),
     estimated: true,
   }
+}
+
+/** 小并发池：按输入顺序返回结果，任意一个失败会向上抛。 */
+async function pool(items, limit, worker) {
+  const results = new Array(items.length)
+  let next = 0
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (true) {
+      const index = next++
+      if (index >= items.length) return
+      results[index] = await worker(items[index], index)
+    }
+  })
+  await Promise.all(runners)
+  return results
 }
 
 async function main() {
@@ -201,17 +219,19 @@ async function main() {
     try {
       run(python, ['-c', 'import edge_tts'])
     } catch {
-      fail(`Python ${python} 里没有 edge-tts。先建 .venv-tts 并安装：python3 -m venv .venv-tts && .venv-tts/bin/pip install edge-tts numpy`)
+      fail(`Python ${python} 里没有 edge-tts。先调用 motion_setup({tts:true})，或 node scripts/setup.mjs --tts；手动兜底：python3 -m venv .venv-tts && .venv-tts/bin/pip install edge-tts numpy`)
     }
   }
   const force = Boolean(args.force)
   const gap = Number(args.gap ?? 0.12)
+  const concurrency = provider === 'say'
+    ? 1
+    : Math.max(1, Math.min(6, Number(args.concurrency ?? 3) || 3))
   const warnings = []
   const seen = new Set()
+  const totalStarted = Date.now()
 
-  const lines = []
-  let cursor = 0
-  let lastAudioEnd = 0
+  const specs = []
   for (let index = 0; index < rawLines.length; index++) {
     const raw = rawLines[index]
     const id = String(raw.id ?? index + 1)
@@ -219,137 +239,178 @@ async function main() {
     seen.add(id)
     const text = String(raw.text ?? '').trim()
     if (!text) fail(`第 ${index + 1} 句没有 text`)
-
     const stem = join(outDir, `l${id}.mp3`)
     const metaPath = join(outDir, `l${id}.json`)
     const key = sha256([
       provider, voice, rate, pitch, volume, text, proxy, 'narrate-v1',
     ].join('\u0000'))
+    specs.push({ id, text, stem, metaPath, key, raw })
+  }
 
+  async function generate(spec) {
     let cached = null
-    if (!force && existsSync(stem) && existsSync(metaPath)) {
+    if (!force && existsSync(spec.stem) && existsSync(spec.metaPath)) {
       try {
-        cached = JSON.parse(readFileSync(metaPath, 'utf8'))
+        cached = JSON.parse(readFileSync(spec.metaPath, 'utf8'))
       } catch {
         cached = null
       }
     }
-    const reusable = cached && cached.key === key && Array.isArray(cached.words)
-
-    let meta
+    const reusable = cached && cached.key === spec.key && Array.isArray(cached.words)
     if (reusable) {
-      meta = cached
-      process.stderr.write(`cache  L${id}\n`)
-    } else {
-      process.stderr.write(`tts    L${id}${provider === 'edge' ? ` · ${voice} · ${rate}` : ` · ${voice} · ${rate}wpm`}\n`)
-      meta = provider === 'edge'
-        ? edgeOne({ python, text, voice, rate, pitch, volume, out: stem, wordsOut: metaPath, proxy, retries })
-        : sayOne({ text, voice, rate, out: stem })
-      meta = { ...meta, key, provider, voice, rate, pitch, volume, text, createdAt: new Date().toISOString() }
-      writeFileSync(metaPath, `${JSON.stringify(meta, null, 2)}\n`)
+      process.stderr.write(`cache  L${spec.id}\n`)
+      return { meta: cached, cached: true, elapsedMs: 0 }
     }
 
-    const requested = Number(raw.start)
-    let start = Number.isFinite(requested) ? requested : cursor
-    if (start < 0) start = 0
-    if (start < lastAudioEnd - 0.001) {
-      if (args.shift) {
-        warnings.push(`L${id} 起点 ${start.toFixed(2)}s 与上一句冲突，顺延到 ${lastAudioEnd.toFixed(2)}s`)
-        start = lastAudioEnd
-      } else {
-        warnings.push(`L${id} 起点 ${start.toFixed(2)}s 早于上一句音频结束 ${lastAudioEnd.toFixed(2)}s，可能重叠`)
+    process.stderr.write(`tts    L${spec.id}${provider === 'edge' ? ` · ${voice} · ${rate}` : ` · ${voice} · ${rate}wpm`}\n`)
+    const started = Date.now()
+    let meta = provider === 'edge'
+      ? await edgeOne({
+          python, text: spec.text, voice, rate, pitch, volume,
+          out: spec.stem, wordsOut: spec.metaPath, proxy, retries,
+        })
+      : sayOne({ text: spec.text, voice, rate, out: spec.stem })
+    const elapsedMs = Date.now() - started
+    meta = {
+      ...meta, key: spec.key, provider, voice, rate, pitch, volume,
+      text: spec.text, createdAt: new Date().toISOString(),
+    }
+    writeFileSync(spec.metaPath, `${JSON.stringify(meta, null, 2)}\n`)
+    process.stderr.write(`done   L${spec.id} ${(elapsedMs / 1000).toFixed(2)}s\n`)
+    return { meta, cached: false, elapsedMs }
+  }
+
+  const release = acquireProjectLock(project, { command: 'narrate' })
+  try {
+    const generated = await pool(specs, concurrency, generate)
+    const cacheHits = generated.filter((item) => item.cached).length
+    const ttsMs = generated.reduce((sum, item) => sum + item.elapsedMs, 0)
+
+    const lines = []
+    let cursor = 0
+    let lastAudioEnd = 0
+    for (let index = 0; index < specs.length; index++) {
+      const spec = specs[index]
+      const { meta } = generated[index]
+      const { id, text } = spec
+      const requested = Number(spec.raw.start)
+      let start = Number.isFinite(requested) ? requested : cursor
+      if (start < 0) start = 0
+      if (start < lastAudioEnd - 0.001) {
+        if (args.shift) {
+          warnings.push(`L${id} 起点 ${start.toFixed(2)}s 与上一句冲突，顺延到 ${lastAudioEnd.toFixed(2)}s`)
+          start = lastAudioEnd
+        } else {
+          warnings.push(`L${id} 起点 ${start.toFixed(2)}s 早于上一句音频结束 ${lastAudioEnd.toFixed(2)}s，可能重叠`)
+        }
       }
+      const audioEnd = start + meta.duration
+      const speechEnd = start + meta.speechEnd
+      lines.push({
+        id,
+        start: Number(start.toFixed(3)),
+        end: Number(speechEnd.toFixed(3)),
+        audioEnd: Number(audioEnd.toFixed(3)),
+        text,
+        estimated: Boolean(meta.estimated),
+        words: meta.words.map((word) => ({
+          text: word.text,
+          start: Number((start + word.start).toFixed(3)),
+          end: Number((start + word.end).toFixed(3)),
+        })),
+      })
+      lastAudioEnd = audioEnd
+      cursor = audioEnd + gap
     }
-    const audioEnd = start + meta.duration
-    const speechEnd = start + meta.speechEnd
-    lines.push({
-      id,
-      start: Number(start.toFixed(3)),
-      end: Number(speechEnd.toFixed(3)),
-      audioEnd: Number(audioEnd.toFixed(3)),
-      text,
-      estimated: Boolean(meta.estimated),
-      words: meta.words.map((word) => ({
-        text: word.text,
-        start: Number((start + word.start).toFixed(3)),
-        end: Number((start + word.end).toFixed(3)),
-      })),
+
+    const finalAudioEnd = Math.max(...lines.map((line) => line.audioEnd))
+    const duration = Number(args.duration ?? spec.duration ?? Math.max(30, finalAudioEnd + 0.5))
+    if (finalAudioEnd > duration + 0.01) {
+      warnings.push(`最后一句结束于 ${finalAudioEnd.toFixed(2)}s，超过成片时长 ${duration}s`)
+    }
+
+    const timing = {
+      version: 1,
+      provider,
+      voice,
+      rate,
+      pitch: provider === 'edge' ? pitch : null,
+      volume: provider === 'edge' ? volume : null,
+      duration,
+      generatedAt: new Date().toISOString(),
+      source: specPath,
+      lines,
+    }
+    const timingPath = join(outDir, 'timing.json')
+    writeFileSync(timingPath, `${JSON.stringify(timing, null, 2)}\n`)
+
+    const srt = []
+    lines.forEach((line, index) => {
+      let end = line.end + 0.18
+      if (index < lines.length - 1) end = Math.min(end, lines[index + 1].start - 0.08)
+      end = Math.max(end, line.start + 0.5)
+      srt.push(
+        String(index + 1),
+        `${srtTime(line.start)} --> ${srtTime(Math.min(end, duration))}`,
+        wrapCaption(line.text, 18),
+        '',
+      )
     })
-    lastAudioEnd = audioEnd
-    cursor = audioEnd + gap
-  }
+    const srtPath = join(outDir, 'captions.srt')
+    writeFileSync(srtPath, srt.join('\n'))
 
-  const finalAudioEnd = Math.max(...lines.map((line) => line.audioEnd))
-  const duration = Number(args.duration ?? spec.duration ?? Math.max(30, finalAudioEnd + 0.5))
-  if (finalAudioEnd > duration + 0.01) {
-    warnings.push(`最后一句结束于 ${finalAudioEnd.toFixed(2)}s，超过成片时长 ${duration}s`)
-  }
+    const summary = {
+      project,
+      provider,
+      voice,
+      rate,
+      outDir,
+      timing: timingPath,
+      srt: srtPath,
+      duration,
+      lines: lines.map((line) => ({
+        id: line.id,
+        start: line.start,
+        end: line.end,
+        audioEnd: line.audioEnd,
+        text: line.text,
+        estimated: line.estimated,
+      })),
+      concurrency,
+      cacheHits,
+      ttsMs,
+      ttsWallMs: Date.now() - totalStarted,
+      totalMs: Date.now() - totalStarted,
+      warnings,
+    }
 
-  const timing = {
-    version: 1,
-    provider,
-    voice,
-    rate,
-    pitch: provider === 'edge' ? pitch : null,
-    volume: provider === 'edge' ? volume : null,
-    duration,
-    generatedAt: new Date().toISOString(),
-    source: specPath,
-    lines,
-  }
-  const timingPath = join(outDir, 'timing.json')
-  writeFileSync(timingPath, `${JSON.stringify(timing, null, 2)}\n`)
+    recordMetric(project, {
+      phase: 'tts',
+      activeSec: summary.totalMs / 1000,
+      cacheHits: summary.cacheHits,
+      lines: summary.lines.length,
+      provider,
+      concurrency,
+    })
 
-  const srt = []
-  lines.forEach((line, index) => {
-    let end = line.end + 0.18
-    if (index < lines.length - 1) end = Math.min(end, lines[index + 1].start - 0.08)
-    end = Math.max(end, line.start + 0.5)
-    srt.push(
-      String(index + 1),
-      `${srtTime(line.start)} --> ${srtTime(Math.min(end, duration))}`,
-      wrapCaption(line.text, 18),
-      '',
-    )
-  })
-  const srtPath = join(outDir, 'captions.srt')
-  writeFileSync(srtPath, srt.join('\n'))
-
-  const summary = {
-    project,
-    provider,
-    voice,
-    rate,
-    outDir,
-    timing: timingPath,
-    srt: srtPath,
-    duration,
-    lines: lines.map((line) => ({
-      id: line.id,
-      start: line.start,
-      end: line.end,
-      audioEnd: line.audioEnd,
-      text: line.text,
-      estimated: line.estimated,
-    })),
-    warnings,
+    if (args.json) {
+      console.log(JSON.stringify(summary, null, 2))
+      return
+    }
+    console.log(`旁白 ${provider} · ${voice} · ${rate} · cache ${cacheHits}/${lines.length} · ${(summary.totalMs / 1000).toFixed(2)}s`)
+    for (const line of lines) {
+      console.log(
+        `L${line.id.padEnd(2)} ${line.start.toFixed(2).padStart(5)}s → ${line.end.toFixed(2).padStart(5)}s`
+        + `  (${(line.end - line.start).toFixed(2)}s)  ${line.text}`
+        + (line.estimated ? '  [estimated]' : ''),
+      )
+    }
+    for (const warning of warnings) console.warn(`warn   ${warning}`)
+    console.log(`timing ${timingPath}`)
+    console.log(`srt    ${srtPath}`)
+  } finally {
+    release()
   }
-
-  if (args.json) {
-    console.log(JSON.stringify(summary, null, 2))
-    return
-  }
-  console.log(`旁白 ${provider} · ${voice} · ${rate}`)
-  for (const line of lines) {
-    console.log(
-      `L${line.id.padEnd(2)} ${line.start.toFixed(2).padStart(5)}s → ${line.end.toFixed(2).padStart(5)}s`
-      + `  (${(line.end - line.start).toFixed(2)}s)  ${line.text}`
-      + (line.estimated ? '  [estimated]' : ''),
-    )
-  }
-  for (const warning of warnings) console.warn(`warn   ${warning}`)
-  console.log(`timing ${timingPath}`)
-  console.log(`srt    ${srtPath}`)
 }
 
 main().catch((error) => {

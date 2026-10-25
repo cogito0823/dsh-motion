@@ -1,0 +1,12 @@
+{
+  "title": "{{TITLE}}",
+  "provider": "edge",
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "rate": "+0%",
+  "duration": {{DURATION}},
+  "lines": [
+    { "id": 1, "start": {{LINE1}}, "text": "先看一个问题。" },
+    { "id": 2, "start": {{LINE2}}, "text": "把关系画出来，答案就清楚了。" },
+    { "id": 3, "start": {{LINE3}}, "text": "这就是我们要记住的一句话。" }
+  ]
+}

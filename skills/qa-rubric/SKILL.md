@@ -16,17 +16,29 @@ description: 代码动画的自检清单：环境、公式、画面、音频、�
 
 ## 1. 环境（一次调用）
 
-开工前跑**一次** `motion_doctor`：运行时 + 中文字体 + 公式转换 + API 签名一起返回。
+开工前跑**一次** `motion_doctor`：运行时 + 中文字体 + 公式转换 + API/rate 一起返回。
 
 - `ready.math` / `ready.delivery` / `ready.fonts` / `ready.formulas` 全 true 再继续；
-- `cached.hit: true` 表示环境未变（指纹含 venv / manimgx mtime），不必重跑；
-- 不要为字体、公式、模块版本各跑一条 bash，也不要读 site-packages 查 API：签名在 `probe.api`；
+- 缺 venv 或 manimgx/sympy：调用 `motion_setup`，不要用 bash 跑 `python3 -m venv`（沙箱会拒绝）；
+- `cached.hit: true` 表示环境未变（指纹含 venv / manimgx mtime；不再按 Node 版本分叉），不必重跑；
+- 不要为字体、公式、模块版本各跑一条 bash，也不要读 site-packages 查 API：看 `fonts.cjk`、`api`、`functions`、`rates`，完整表在 [references/api.md](../animation-router/references/api.md)；
 - 换 venv 或升级 manimgx 后，用 `MOTION_PREFLIGHT=force motion_doctor` 强制重测。
 
 ## 2. 公式（仅数学题材）
 
 - 所有上屏公式先过 `formula_check`；
 - 逐条对照代码与画面，确认没有手改过的常数。
+
+## 2.5 时间轴（定稿前）
+
+```bash
+node scripts/timeline-check.mjs <project> --strict
+```
+
+- cue 重复/乱序/越界、cue 结束超出片长 → error，必须改；
+- 旁白晚于画面 >0.35s、旁白压到下一拍 → warn；`--strict` 下也要处理；
+- 场景运行时用 `TimedScene.cue()`；看到 `[late]` 不要继续渲染，先修时间轴或画面节奏；
+- 改时间先改 `timeline.json`，再改场景，避免两套时间。
 
 ## 3. 工程（仅当用了 HyperFrames）
 
@@ -48,6 +60,7 @@ npx hyperframes check
 ```
 
 - 返回的 storyboard PNG 逐张看过：无叠字、无出画、字号可读；
+- `layoutIssues[].index` 直接对应 sheet 第几格；只复审改动帧 + 相邻帧，不整张重看；
 - sheet 每格顶部是 caption 条，不是画面；不要把 caption 当成"上沿被裁"；
 - 中文文本没有用字符级 `Transform` / `ReplacementTransform`；换词用 FadeOut + FadeIn；
 - `layoutProblems` 每一条都要处理或明确接受；
@@ -58,6 +71,8 @@ npx hyperframes check
 
 - 旁白最后一字早于结论画面；
 - 响度 ≈ −14 LUFS（±1），真峰值 ≤ −1 dBTP；具体以该片 STYLE.md 为准；
+- `node scripts/mix.mjs <project> --report-gaps`：旁白间隙的 mix/voice dB 要看得见；
+  有音乐铺底时间隙低于 −40 dB（默认阈值）会告警，听感容易“掉空”；
 - 没有爆音、没有截断。
 
 ## 6. 字幕
@@ -68,7 +83,12 @@ npx hyperframes check
 
 ## 7. 交付
 
-mp4 + `.srt` + 场景源码 + `DESIGN.md` + 分镜表。
+mp4 + `.srt` + 场景源码 + `DESIGN.md` + 分镜表 + `timeline.json`。
+
+- `motion_probe` 报 `vfr:true / cfr:false` 时，交付前用 `assemble.py` 或 `motion_render` 归一成 CFR；
+- raw 只作为中间片，不要直接给剪辑软件；
+- `node scripts/run-report.mjs <project> --wall <端到端秒数>`：active 与 wall 分开记录，
+  不要把 compute 的百分比写成端到端收益。
 
 开工前跑过 `node scripts/approvals.mjs check <project>`；确保 `APPROVALS.json` 里 `start` 是用户明确授权，而不是 agent 自己填的。
 

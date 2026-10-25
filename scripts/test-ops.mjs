@@ -21,10 +21,12 @@ import {
   isBlankFrame,
   normalizePost,
   normalizeTimes,
+  parseFrameRate,
   parseInspectOutput,
   parseSignalStats,
   summarizeRender,
   tileGrid,
+  videoInfoFromProbe,
 } from '../lib/ops.js'
 
 let failed = 0
@@ -187,6 +189,7 @@ test('parseInspectOutput 读出片名/时长/多张 sheet 与 layout 问题', ()
   assert.equal(parsed.layoutOk, false)
   assert.equal(parsed.layoutProblems.length, 1)
   assert.match(parsed.layoutProblems[0], /past the right edge/)
+  assert.deepEqual(parsed.layoutIssues, [{ index: 1, message: parsed.layoutProblems[0] }])
 })
 
 test('parseInspectOutput 认 0 problem 与空输出', () => {
@@ -267,6 +270,39 @@ test('pluginSource 版本与 lib 路径自洽', () => {
   else { failed++; console.log('FAIL assertBrief 放行临时场景') }
   rmSync(scratch, { recursive: true, force: true })
 }
+
+test('parseFrameRate 解析 30000/1001 与 0/0', () => {
+  assert.equal(parseFrameRate('30/1'), 30)
+  assert.equal(parseFrameRate('30000/1001'), 29.97)
+  assert.equal(parseFrameRate('0/0'), null)
+  assert.equal(parseFrameRate(null), null)
+})
+
+test('videoInfoFromProbe 认 CFR 30fps', () => {
+  const info = videoInfoFromProbe({
+    streams: [{ width: 1920, height: 1080, r_frame_rate: '30/1', avg_frame_rate: '30/1', nb_read_frames: '900' }],
+    format: { duration: '30.0', size: '10000000' },
+  })
+  assert.equal(info.fps, 30)
+  assert.equal(info.avgFps, 30)
+  assert.equal(info.frames, 900)
+  assert.equal(info.expectedFrames, 900)
+  assert.equal(info.frameDelta, 0)
+  assert.equal(info.vfr, false)
+  assert.equal(info.cfr, true)
+})
+
+test('videoInfoFromProbe 认 VFR raw（621 帧 / 30.033s / 20.68fps）', () => {
+  const info = videoInfoFromProbe({
+    streams: [{ r_frame_rate: '30/1', avg_frame_rate: '621/30.033', nb_read_frames: '621' }],
+    format: { duration: '30.033' },
+  })
+  assert.equal(info.frames, 621)
+  assert.equal(info.expectedFrames, 901)
+  assert.equal(info.frameDelta, -280)
+  assert.equal(info.vfr, true)
+  assert.equal(info.cfr, false)
+})
 
 // —— importFresh：改文件后按 mtime 重新 import（热加载的基础） ——
 {

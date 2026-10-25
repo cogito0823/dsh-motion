@@ -1,12 +1,14 @@
 ---
 style: swiss-motion
 style_version: 1.0.0
-updated: 2026-10-25
+updated: 2026-10-26
 ---
 
 # dsh-motion · 默认视觉风格
 
 本项目默认采用 **瑞士动态排版（swiss-motion）**：纸灰底、墨黑字、一个红色信号色、12 栏网格；运动像印刷机一样精确。
+
+> 这是视觉风格契约，不是代码架构；模块边界见 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
 这套语言改编自 [Lemo-Opuscar 的 Swiss Motion Graphics](https://github.com/lemomo-ai/lemo-opuscar/tree/main/styles/swiss-motion)（MIT），不是自创；另外四套可用风格是 `dataviz`、`blueprint`、`whiteboard`、`3b1b`；选择规则在 `styles/registry.json`。
 

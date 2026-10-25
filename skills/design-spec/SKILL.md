@@ -5,6 +5,12 @@ description: 为动画片写 DESIGN.md（设计规范）：配色、字体、间
 
 # 写一份 DESIGN.md
 
+## 从模板开始
+
+新项目先跑 `node scripts/scaffold.mjs <dest> --title "片名" --duration 30`，
+会生成 `DESIGN.md`、`timeline.json`、`timeline.py`（`TimedScene.cue` 落后告警）、
+`scene.py`、`narration.json`、`assemble.py`。在本文件基础上改，不要从空白开始。
+
 ## 为什么必须写
 
 HyperFrames 的 look 文档原话：**不给外部输入，相同的 brief 每次都会得到同一个 look；禁掉它只会滑到下一个默认。**
@@ -61,6 +67,18 @@ spacing: { margin: 140, rule: 2 }
 ## 参考
 - 具体到某类图版、某支片、某个年代的印刷品
 ```
+
+## 选字体：只信 `motion_doctor.fonts.cjk`
+
+不要在 `DESIGN.md` 里写一个“希望存在”的字体，也不要用 `fc-list` / `ls /System/Library/Fonts` 猜：
+
+- `motion_doctor` 的 `fonts.cjk` 是**实测解析成功**的中文家族（用“缺字体基线”排除 manimgx 的静默回退）；
+- `fonts.latin` / `fonts.display` 是可用的拉丁/展示字体；`fonts.unavailable` 是明确不存在的；
+- 常用组合：正文 `PingFang SC`，标题 `Songti SC` / `Yuanti SC` / `Hannotate SC`，白板 `Chalkboard SE`；
+- 公式仍用 `MathTex`，中文注释用 `Text`；不要把中文塞进公式；
+- 如果 `fonts.cjk` 为空：先 `motion_setup`（会装 `manimgx-fonts-cjk`），再重跑 `motion_doctor`。
+
+`DESIGN.md` 的 typography 只写 `fonts.cjk` 里出现过的 family；换字体时同步改 `tokens.json` 的 `typography`。
 
 ## 先出三张风格帧
 

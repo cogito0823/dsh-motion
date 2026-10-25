@@ -23,3 +23,6 @@ projects/
 
 # 本地旁白环境（edge-tts / numpy）
 .venv*/
+
+# 运行账本（scaffold/工具自动写）
+.dsh-motion/

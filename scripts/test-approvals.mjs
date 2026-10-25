@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -56,24 +56,49 @@ test('需求字段格式不对会报错', () => {
 test('按顺序全部确认后 check 通过', () => {
   assert.equal(run([
     'set', project, 'requirements', 'approved',
-    '--duration', '30s', '--aspect', '1920x1080', '--delivery', 'narrated', '--note', '需求',
+    '--duration', '30s', '--aspect', '1920x1080', '--delivery', 'narrated', '--confirmation', 'q-test-1', '--note', '需求',
   ]).code, 0)
   assert.equal(run(['set', project, 'script_storyboard', 'approved', '--note', '脚本+分镜']).code, 0)
   assert.equal(run(['set', project, 'look', 'approved', '--note', '3 帧']).code, 0)
-  assert.equal(run(['set', project, 'start', 'approved', '--note', '可以开始']).code, 0)
+  assert.equal(run(['set', project, 'start', 'approved', '--confirmation', 'q-test-2', '--note', '可以开始']).code, 0)
   assert.equal(run(['check', project]).code, 0)
 })
 
 test('改需求会把下游确认重置为 pending', () => {
   const dir = mkdtempSync(join(tmpdir(), 'dsh-approvals-reset-'))
   run(['init', dir, '--mode', 'light'])
-  run(['set', dir, 'requirements', 'approved', '--duration', '15s', '--aspect', '1080x1920', '--delivery', 'silent'])
+  run(['set', dir, 'requirements', 'approved', '--duration', '15s', '--aspect', '1080x1920', '--delivery', 'silent', '--confirmation', 'q-test-3'])
   run(['set', dir, 'script_storyboard', 'approved', '--note', '脚本'])
   assert.equal(run(['check', dir]).code, 1)
   // 换交付方式：旧的“脚本已确认”必须作废
-  assert.equal(run(['set', dir, 'requirements', 'approved', '--duration', '30s', '--aspect', '1920x1080', '--delivery', 'narrated']).code, 0)
+  assert.equal(run(['set', dir, 'requirements', 'approved', '--duration', '30s', '--aspect', '1920x1080', '--delivery', 'narrated', '--confirmation', 'q-test-4']).code, 0)
   const out = run(['show', dir]).out
   assert.match(out, /脚本.*pending/)
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('requirements / start 必须有 confirmation', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'dsh-approvals-confirm-'))
+  run(['init', dir, '--mode', 'light'])
+  const missing = run([
+    'set', dir, 'requirements', 'approved',
+    '--duration', '10s', '--aspect', '1920x1080', '--delivery', 'silent',
+  ])
+  assert.equal(missing.code, 1)
+  assert.match(missing.out, /confirmation/)
+  assert.equal(run([
+    'set', dir, 'requirements', 'approved',
+    '--duration', '10s', '--aspect', '1920x1080', '--delivery', 'silent',
+    '--confirmation', 'q-confirm-1',
+  ]).code, 0)
+  const ledger = JSON.parse(readFileSync(join(dir, 'APPROVALS.json'), 'utf8'))
+  assert.equal(ledger.stages.requirements.by, 'agent')
+  assert.equal(ledger.stages.requirements.confirmation, 'q-confirm-1')
+  assert.ok(ledger.stages.requirements.briefHash)
+  assert.equal(run(['set', dir, 'script_storyboard', 'approved']).code, 0)
+  assert.equal(run(['set', dir, 'look', 'approved']).code, 0)
+  assert.equal(run(['set', dir, 'start', 'approved']).code, 1)
+  assert.equal(run(['set', dir, 'start', 'approved', '--confirmation', 'q-confirm-2']).code, 0)
   rmSync(dir, { recursive: true, force: true })
 })
 

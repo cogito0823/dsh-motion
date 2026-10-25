@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { readCache, statSig, writeCache } from '../lib/cache.js'
-import { cacheCandidates } from '../lib/preflight.js'
+import { FINGERPRINT_SCHEMA, cacheCandidates, fingerprint } from '../lib/preflight.js'
 
 const dir = mkdtempSync(join(tmpdir(), 'dsh-motion-preflight-'))
 const file = join(dir, 'cache.json')
@@ -38,6 +38,12 @@ try {
 
   // 写不进去返回 null，不抛
   assert.equal(writeCache('/dev/null/nested/x.json', fp, {}), null)
+
+  // 指纹不随 Node 版本分叉：探针在 venv Python 里跑，Harness 与 CLI 应共用缓存
+  const fpNow = fingerprint({})
+  assert.equal(fpNow.schema, FINGERPRINT_SCHEMA)
+  assert.ok(!('node' in fpNow), '指纹不应包含 Node 版本')
+  assert.ok(fpNow.platform.includes(process.platform), '指纹应包含平台')
 
   // 落点：显式配置优先；否则临时目录在这台机器上比 MOTION_HOME 更可能可写
   const explicit = cacheCandidates({ cacheFile: join(dir, 'explicit.json') })

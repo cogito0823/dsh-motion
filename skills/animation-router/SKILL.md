@@ -17,11 +17,12 @@ node scripts/plan-questions.mjs "<brief>" --json
 
 ```bash
 node scripts/approvals.mjs set <project> requirements approved \
-  --duration 30s --aspect 1920x1080 --delivery frames|silent|narrated \
-  --note "用户确认"
+  --duration 30s --aspect 1920x1080 --delivery silent \
+  --confirmation q_... --note "用户确认"   # delivery 三选一：frames / silent / narrated
 ```
 
-把返回的 `questions` 原样交给 `ask_user_question`，`assumptions` 作为默认值。规则：
+把返回的 `questions` 原样交给 `ask_user_question`，`assumptions` 作为默认值。
+`requirements` / `start` 的 `approved` 必须带 `--confirmation`，填 `ask_user_question` 返回的 question id；`briefHash` 由脚本自动生成，手改 brief 会被拒。规则：
 
 - **画幅**：brief 已说"竖屏/横屏/16:9"就不再单独出题，但落账前要在回复里回显确认；没说才问，只给推断出的 2 个；
 - **交付**：brief 已说"要旁白"或"静音"同样回显确认；没说才问；
@@ -41,21 +42,44 @@ node scripts/approvals.mjs set <project> requirements approved \
 
 ## 0.5 环境预检：跑一次，别再拆
 
-开工前只调用**一次** `motion_doctor`。它一口气返回：
+开工前只调用**一次** `motion_doctor`。它返回：
 
 - 运行时：Node / FFmpeg / venv / manimgx / sympy / Chrome / HyperFrames；
-- **字体**：PingFang SC、Helvetica Neue 的构造结果；
-- **公式**：`\lim_{}\frac{}{}`、微分记号、积分三条样本的 Typst 转换；
-- **API 签名**：`probe.api` 里的 MathTex / Text / DecimalNumber / ValueTracker / Axes。
+- **字体**：`fonts.cjk` 是通过“缺字体基线”校验的真实可用家族；`fonts.latin` / `fonts.display` / `fonts.unavailable` 同理；
+- **公式**：`formulas.samples` 三条样本的 Typst 转换；
+- **API**：`api`（类）、`functions`（动画）、`rates`（缓动名）；完整表见 [references/api.md](references/api.md)。
 
 规则：
 
 - `ready.math` / `ready.delivery` / `ready.fonts` / `ready.formulas` 全为 true 才开工；
-- **不要**把字体、公式、模块版本拆成多条 bash 去查：每条都是一次模型往返（5–15 s），而这次预检本身约 0.5 s；
-- 结果按文件指纹缓存 12 h。`cached.hit: true` 表示环境没变，直接信；升级 venv / manimgx 会自动失效，要手动重测用 `MOTION_PREFLIGHT=force`；
-- 要库 API 先看 `probe.api`，**不要读 site-packages 源码**；签名不够时用一条命令补：`python -c "import inspect, manimgx; print(inspect.signature(manimgx.DecimalNumber.__init__))"`；
+- `ready.math=false` 或缺 manimgx/sympy：调用**一次** `motion_setup`（必要时 `force=true`），**不要**用 bash 跑 `python3 -m venv`——venv 在 workspace 外，会被沙箱拒绝；
+- `ready.fonts=false`：先 `motion_setup`；仍失败再看 `fonts.unavailable`。**不要** `fc-list` / `ls /System/Library/Fonts` 猜字体；
+- 选字体只用 `fonts.cjk`。manimgx 对不存在的字体**静默回退**：`Text(...)` 构造成功不代表字体存在；
+- 结果按文件指纹缓存 12 h，且不再按 Node 版本分叉。`cached.hit: true` 直接信；要手动重测用 `MOTION_PREFLIGHT=force`；
+- 要库 API 先看 `api` / `functions` / `rates` 和 [references/api.md](references/api.md)，**不要读 site-packages 源码**；
 - 构造通过 ≠ 画面没问题：排版仍以第一帧（`motion_frames`）为准；
 - 所以**不要再单独写 probe 场景做冒烟渲染**：项目的第一帧就是冒烟，一次就够。
+
+## 0.6 项目根、时间轴、VFR 与度量口径
+
+- **项目根**：`motion.project.json` 是唯一标识；新项目用 `scaffold` 建在
+  `~/dsh-motion-projects/<slug>`（或 `MOTION_PROJECTS_HOME`），不要建在插件包内；
+  老项目用 `project-adopt` 补 manifest。正式 `motion_render` 必须有项目根；
+- **输出位置**：frames/render/probe 默认落 `<project>/out/...`，不要用 cwd 决定；
+  同一项目并发由 `.dsh-motion/project.lock` 挡住；
+- **时间轴契约**：项目里的 `timeline.json` 是 cue 的唯一来源；场景继承
+  [templates/project/timeline.py](../../templates/project/timeline.py) 的 `TimedScene`，
+  用 `self.cue("hook")` 对照 `self.time`，落后超过 0.35s 会打印 `[late]`；
+- **定稿前自检**：`node scripts/timeline-check.mjs <project> --strict`，检查 cue 重复/乱序/越界、
+  旁白晚于画面、旁白压到下一拍；error 或 strict 下的 warn 都不许进 `motion_render`；
+- **layout 定位**：`motion_frames` 的 `layoutIssues[].index` 对应 storyboard 第几格，直接改那一格，
+  不要把整张 sheet 重看一遍；
+- **VFR**：`motion_probe` 会报 `fps/avgFps/frames/vfr/cfr`。`vfr:true` 的 raw 只是中间片，
+  不要当固定帧率素材给剪辑软件；交付前用 `assemble.py` 或 `motion_render` 归一成 CFR；
+- **度量口径**：`node scripts/run-report.mjs <project> --wall <端到端秒数>` 输出 active/wall；
+  “TTS 省 61.6%”这类数字默认只指 active 切片，不能当端到端收益；
+- **TTS 缓存**：`narrate` 默认按文本/音色/语速哈希缓存，重复渲染不会重复走网络；
+  多句默认并发 3（`--concurrency`），失败由 `tts_edge.py` 重试。
 
 ## 1. 判题材
 
@@ -102,10 +126,13 @@ node scripts/approvals.mjs set <project> requirements approved \
 - 交付清单：画幅 / fps / 时长 / 文件 / 音频 / 字幕；
 - animatic：带时长的分镜 + 临时旁白，只在 `full` 或用户要求时做。
 
-用账本记录，别靠上下文记忆：
+用账本记录，别靠上下文记忆（完整命令见 [references/commands.md](references/commands.md)）：
 
 ```bash
 node scripts/approvals.mjs init <project> --mode light
+node scripts/approvals.mjs set <project> requirements approved \
+  --duration 30s --aspect 1920x1080 --delivery silent \
+  --confirmation q_... --note "用户确认"  # frames / silent / narrated
 node scripts/approvals.mjs set <project> script_storyboard approved --note "用户确认"
 node scripts/approvals.mjs check <project>   # 未全部 approved 时退出 1
 ```
@@ -121,13 +148,18 @@ node scripts/approvals.mjs check <project>   # 未全部 approved 时退出 1
 ## 5. 执行顺序（确认后才开始）
 
 ```
-0. 最小场景：只放 6–8 个关键构图，motion_frames 出 sheet（首帧预算 ≤60s）
+0. 时间轴自检：node scripts/timeline-check.mjs <project> --strict
+0.5 最小场景：只放 6–8 个关键构图，motion_frames 出 sheet（首帧预算 ≤60s）
 1. 补全场景代码 + formula_check
 2. motion_frames（3–6 帧，局部改动后）
 3. 确认过的分镜帧（6–9 帧，若要）
 4. motion_render（draft → final）
 5. HyperFrames composition（字幕/旁白/混音；需要时才进）
-6. hyperframes check / motion_probe（只对最终成片跑一次）
+   - 旁白：`node scripts/narrate.mjs <project> --provider edge --voice zh-CN-XiaoxiaoNeural`
+   - 混音：`node scripts/mix.mjs <project> --music assets/bed.wav --mux out/clip.mp4 --report-gaps`
+   - 先 `motion_setup({tts:true})` 或 `node scripts/setup.mjs --tts`；模板见 [references/commands.md](references/commands.md)
+6. hyperframes check / motion_probe（只对最终成片跑一次；`vfr:true` 的 raw 先归一成 CFR）
+7. node scripts/run-report.mjs <project> --wall <端到端秒数>（记录 active/wall，不混口径）
 ```
 
 `motion_frames` 内部是 `manimgx inspect`，只画请求的时刻并做版式检查；
@@ -144,4 +176,6 @@ node scripts/approvals.mjs check <project>   # 未全部 approved 时退出 1
 7. **首帧预算 ≤60s**：先最小场景 + 构图 sheet，60s 看不到第一帧就停；
 8. **只做局部 edit**：改动 <50% 不重写整个文件；
 9. **图片/上下文预算**：每次迭代 1 张 sheet（约 960px），上下文 ≤100k；
-10. **预检只跑一次**：`motion_doctor` 已含字体/公式/API 签名并缓存 12 h，不拆成多条 bash，也不读库源码。
+10. **预检只跑一次**：`motion_doctor` 已含字体/公式/API/rate 并缓存 12 h；缺环境用 `motion_setup`，不拆成多条 bash，也不读库源码；
+11. **时间轴先过再渲染**：`timeline-check --strict` 通过；cue 落后、旁白压拍、VFR raw 都不带进成片；
+12. **度量写清口径**：active/compute 与 wall/端到端分开记；`run-report` 是唯一汇总入口。

@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "id": "showcase-whiteboard-derivative",
+  "name": "割线为什么变切线 · 白板",
+  "createdAt": "2026-10-26T04:00:00+08:00",
+  "primaryScene": "scene.py",
+  "kind": "showcase"
+}

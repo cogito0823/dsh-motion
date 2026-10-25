@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "id": "showcase-dataviz-secant",
+  "name": "割线变切线 · 数据叙事",
+  "createdAt": "2026-10-26T04:00:00+08:00",
+  "primaryScene": "scene.py",
+  "kind": "showcase"
+}

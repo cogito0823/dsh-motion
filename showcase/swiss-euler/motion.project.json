@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "id": "showcase-swiss-euler",
+  "name": "欧拉公式 · 瑞士排版",
+  "createdAt": "2026-10-26T04:00:00+08:00",
+  "primaryScene": "scene.py",
+  "kind": "showcase"
+}

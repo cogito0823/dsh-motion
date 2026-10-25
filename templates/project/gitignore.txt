@@ -1,0 +1,5 @@
+out/
+.dsh-motion/
+audio/cache/
+audio/master.wav
+audio/premaster.wav

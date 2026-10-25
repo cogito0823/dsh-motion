@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "title": "{{TITLE}}",
+  "durationSec": {{DURATION}},
+  "fps": 30,
+  "cues": [
+    { "id": "hook", "at": 0.0, "hold": {{HOLD_HOOK}}, "lineId": 1, "note": "开场：标题 + 一个问题" },
+    { "id": "point", "at": {{AT_POINT}}, "hold": {{HOLD_POINT}}, "lineId": 2, "note": "核心关系/公式" },
+    { "id": "close", "at": {{AT_CLOSE}}, "hold": {{HOLD_CLOSE}}, "lineId": 3, "note": "结论 + 收束" }
+  ]
+}

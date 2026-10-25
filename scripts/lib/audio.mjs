@@ -6,7 +6,10 @@ import { existsSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { spawnSync } from 'node:child_process'
+import { execFile, spawnSync } from 'node:child_process'
+import { promisify } from 'node:util'
+
+const execFileAsync = promisify(execFile)
 
 export const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 
@@ -43,6 +46,24 @@ export function run(command, args, { input, allowFail = false, timeout = 0 } = {
     throw new Error(`${command} 退出码 ${result.status}${detail ? `\n${detail}` : ''}`)
   }
   return { status: result.status, stdout: result.stdout ?? '', stderr: result.stderr ?? '' }
+}
+
+/**
+ * 异步子进程：narrate 的并发 TTS 必须用异步，spawnSync 会阻塞事件循环，
+ * 并行只会退化成串行。
+ */
+export async function runAsync(command, args, { timeout = 0, maxBuffer = 64 * 1024 * 1024 } = {}) {
+  try {
+    const { stdout, stderr } = await execFileAsync(command, args, {
+      timeout: timeout || undefined,
+      maxBuffer,
+      encoding: 'utf8',
+    })
+    return { stdout, stderr }
+  } catch (error) {
+    const detail = String(error?.stderr || error?.stdout || error?.message || '').trim()
+    throw new Error(`${command} 退出码 ${error?.code ?? '?'}${detail ? `\n${detail}` : ''}`)
+  }
 }
 
 export function ffprobeDuration(file) {

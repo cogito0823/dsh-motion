@@ -20,7 +20,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
-import { DELIVERY_MODES, REQUIRED_BRIEF } from '../lib/approvals.js'
+import { DELIVERY_MODES, REQUIRED_BRIEF, briefHashOf, recordApprovalEvent } from '../lib/approvals.js'
+import { PROJECT_FILE, readProjectManifest } from '../lib/project.js'
 
 const FILE = 'APPROVALS.json'
 const LABELS = {
@@ -39,6 +40,7 @@ const MODES = {
   full: ['requirements', 'script', 'storyboard', 'animatic', 'look', 'delivery', 'start'],
 }
 const STATUSES = new Set(['pending', 'approved', 'rejected'])
+const CONFIRMATION_REQUIRED = new Set(['requirements', 'start'])
 
 /** 需求三件套的格式约束：宁可报错，也不要存进一句含糊的 note。 */
 const BRIEF_FORMATS = {
@@ -76,10 +78,25 @@ function init(project, mode) {
   if (existsSync(file)) fail(`${file} 已存在；要重建请先删除`)
   const stages = {}
   for (const stage of MODES[mode]) {
-    stages[stage] = { label: LABELS[stage], status: 'pending', at: null, by: null, note: '' }
+    stages[stage] = { label: LABELS[stage], status: 'pending', at: null, by: null, confirmation: null, note: '' }
   }
-  const data = { version: 1, project: project, mode, createdAt: new Date().toISOString(), stages }
+  const root = resolve(project)
+  let projectId = null
+  try {
+    if (existsSync(join(root, PROJECT_FILE))) projectId = readProjectManifest(root).id
+  } catch (error) {
+    fail(`读取 ${PROJECT_FILE} 失败：${error.message}`)
+  }
+  const data = {
+    version: 1,
+    projectId,
+    project: project,
+    mode,
+    createdAt: new Date().toISOString(),
+    stages,
+  }
   write(project, data)
+  recordApprovalEvent(project, { action: 'approvals_init', outcome: 'init', mode })
   console.log(`created ${file} (${mode})`)
   console.log(`stages: ${MODES[mode].join(' → ')}`)
 }
@@ -111,13 +128,25 @@ function set(project, stage, status, options) {
       if (problem) fail(problem)
     }
     data.stages.requirements.brief = brief
+    data.stages.requirements.briefHash = briefHashOf(brief)
+  }
+
+  if (status === 'approved' && CONFIRMATION_REQUIRED.has(stage) && !options.confirmation) {
+    fail(
+      `${LABELS[stage]} approved 需要用户确认凭据：--confirmation <ask_user_question 的 id>\n`
+      + '例如：--confirmation q_01J... --by agent',
+    )
+  }
+  if (options.confirmation && !/^[\w:.-]{3,120}$/.test(options.confirmation)) {
+    fail(`confirmation 格式不合法: ${options.confirmation}`)
   }
 
   data.stages[stage] = {
     ...data.stages[stage],
     status,
     at: new Date().toISOString(),
-    by: options.by ?? 'user',
+    by: options.by ?? 'agent',
+    confirmation: options.confirmation ?? data.stages[stage].confirmation ?? null,
     note: options.note ?? data.stages[stage].note ?? '',
   }
 
@@ -126,19 +155,28 @@ function set(project, stage, status, options) {
     const index = order.indexOf('requirements')
     for (const key of order.slice(index + 1)) {
       if (data.stages[key].status === 'approved') {
-        data.stages[key] = { ...data.stages[key], status: 'pending', at: null, note: '需求已更新，需重新确认' }
+        data.stages[key] = { ...data.stages[key], status: 'pending', at: null, confirmation: null, note: '需求已更新，需重新确认' }
       }
     }
   }
 
   write(project, data)
+  recordApprovalEvent(project, {
+    action: 'approvals_set',
+    outcome: 'decision',
+    stage,
+    status,
+    by: data.stages[stage].by,
+    confirmation: data.stages[stage].confirmation ?? null,
+    note: data.stages[stage].note ?? '',
+  })
   console.log(`${stage} → ${status}${options.note ? ` (${options.note})` : ''}`)
 }
 
 function table(data) {
   const rows = Object.entries(data.stages).map(([key, value]) => {
     const mark = value.status === 'approved' ? '✅' : value.status === 'rejected' ? '❌' : '⬜'
-    return `${mark} ${value.label.padEnd(14, ' ')} ${value.status.padEnd(8)} ${value.at ?? '-'} ${value.note ?? ''}`
+    return `${mark} ${value.label.padEnd(14, ' ')} ${value.status.padEnd(8)} ${value.at ?? '-'} ${value.by ?? '-'} ${value.confirmation ? `ref=${value.confirmation}` : ''} ${value.note ?? ''}`
   })
   const brief = data.stages?.requirements?.brief
   const briefLine = brief
@@ -150,6 +188,13 @@ function table(data) {
 
 function check(project) {
   const data = read(project)
+  if (data.projectId && existsSync(join(resolve(project), PROJECT_FILE))) {
+    const manifest = readProjectManifest(resolve(project))
+    if (data.projectId !== manifest.id) {
+      console.error(`账本 projectId=${data.projectId} 与 manifest=${manifest.id} 不一致`)
+      process.exit(1)
+    }
+  }
   console.log(table(data))
   const missing = Object.entries(data.stages)
     .filter(([, value]) => value.status !== 'approved')
@@ -160,6 +205,10 @@ function check(project) {
   }
   if (!data.stages?.requirements?.brief) {
     console.error('\n需求没有落 时长/画幅/交付，视为未确认')
+    process.exit(1)
+  }
+  if (data.stages.requirements.briefHash && briefHashOf(data.stages.requirements.brief) !== data.stages.requirements.briefHash) {
+    console.error('\nrequirements.brief 与 briefHash 不一致，视为被改过')
     process.exit(1)
   }
   console.log('\nall approved')
@@ -176,7 +225,7 @@ if (command === 'init') {
   const [stage, status] = rest
   const noteIndex = rest.indexOf('--note')
   const byIndex = rest.indexOf('--by')
-  if (!stage || !status) fail('用法: set <project> <stage> <approved|pending|rejected> [--note ...] [--by ...]')
+  if (!stage || !status) fail('用法: set <project> <stage> <approved|pending|rejected> --confirmation <id> [--by ...] [--note ...]')
   const flags = {}
   for (let i = 2; i < rest.length; i += 1) {
     if (!rest[i].startsWith('--')) continue

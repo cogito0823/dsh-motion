@@ -41,6 +41,41 @@
 - 不把旧代码、旧图、已经确认过的长文重复贴回上下文；
 - 目标峰值 ≤100k；接近 100k 时先摘要再继续。
 
+## 0.7.0：把“理解工具”的成本降下来
+
+2026-10-26 的会话诊断（21 个会话、3 个真实任务）显示：模型时间占 73%，工具只占 27%；
+首帧前 20–26 个探索步、155–238 s 模型时间花在读 README / manimgx 源码 / 扫字体上。已做：
+
+- **skills 自动注册**：`lib/skills.js` 通过 `ctx.skills.registerProvider` 把
+  `animation-router` / `design-spec` / `qa-rubric` 放进会话目录，不再依赖
+  `~/.dsh/skills` 的手工安装；
+- **doctor 情报扩充**：`fonts.cjk`（用“缺字体基线”排除静默回退）、`api` / `functions` / `rates`，
+  并新增 [skills/animation-router/references/api.md](../skills/animation-router/references/api.md)；
+- **环境自愈**：`motion_setup` 在宿主进程建 venv / 装包，绕开模型 bash 的 workspace-write 限制；
+- **缓存键去掉 Node 版本**：Harness（Node 24）与 CLI（Node 26）共用一份预检结果；
+- **固定命令表**：[references/commands.md](../skills/animation-router/references/commands.md) 覆盖
+  setup / approvals / narrate / mix，不再需要读脚本源码。
+
+复测口径不变：首帧、输出 tokens、上下文峰值、读图次数、preflight_calls（目标 1）。
+
+## 0.8.0 / 0.9.0：时间轴、TTS 缓存、VFR、账本与项目根
+
+针对 2026-10-26 的项目复盘（`cue()` 静默落后、raw VFR、TTS 等待、compute/wall 混用）：
+
+- **时间轴契约**：`timeline.json` + `TimedScene.cue()` 运行时 `[late]` 告警 +
+  `scripts/timeline-check.mjs` 定稿前静态校验（cue 乱序/越界、旁白晚到/压拍）；
+- **TTS**：`narrate` 保留按文本/音色/语速的逐句缓存，新增并发（默认 3）和
+  `cacheHits / ttsMs / totalMs`；重复渲染不再重走网络；
+- **VFR**：`motion_probe` 输出 `fps/avgFps/frames/expectedFrames/vfr/cfr`；
+  实测 `out/swiss-euler.mp4` 为 127 帧 / 6.23s / 20.37fps → `vfr:true`；
+- **度量**：工具与脚本写 `<project>/.dsh-motion/metrics.jsonl`，
+  `scripts/run-report.mjs --wall` 统一 active / wall 口径；
+- **复审**：`motion_frames` 增加 `layoutIssues[].index`，直接映射 storyboard 格；
+- **模板**：`templates/project/` + `scripts/scaffold.mjs`；
+- **混音**：`mix --report-gaps` 输出旁白间隙 dB，低于阈值告警。
+- **项目根（0.9.0）**：`motion.project.json` + `resolveProject()`；`APPROVALS` 不再继承父目录，输出落 `<project>/out`，项目内锁防并发覆盖。
+- **审批闭环（0.9.0）**：`requirements`/`start` 绑定 `--confirmation` 与 briefHash；拒绝/绕过写 `.dsh-motion/approvals.jsonl`；工具 render 每次走 `ctx.approval.request`。
+
 ## P1（工具）
 
 已完成：

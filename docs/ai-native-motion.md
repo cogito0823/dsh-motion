@@ -1,5 +1,8 @@
 # AI 原生动效：风格、HyperFrames 与极简模式
 
+> 2026-10-26 更新到 0.9.0。本文保留“为什么”和外部调研；当前模块边界、数据流与不变量见
+> [ARCHITECTURE.md](../ARCHITECTURE.md)。
+
 调研时间 2026-10-25。结论先行：
 
 1. **风格不是形容词，是外部输入。** 通行做法是给 agent 一份可引用的 truth（`frame.md` / `DESIGN.md` / 参考片），把它写成规范，再用**真实代码出的风格帧**验收；不是让模型"感觉一下"。
@@ -74,7 +77,7 @@ HF 是"HTML → MP4"的合成/渲染层，不是绘制层；本插件是绘制�
 | 层 | 负责 | 产物 |
 |---|---|---|
 | manimgx / dsh-motion | 公式、坐标、几何、逐帧确定性画面 | PNG 帧 / MP4 clip |
-| HyperFrames | 排版、字幕、旁白、混音、转场、编码 | 成片 MP4 / WebM / PNG sequence |
+| HyperFrames | 排版、字幕、转场、编码（旁白/混音也可本地做） | 成片 MP4 / WebM / PNG sequence |
 | 共享契约 | `DESIGN.md` / `frame.md` | 颜色、字体、禁用项、语气 |
 
 接入方式（按成本从低到高）：
@@ -82,6 +85,9 @@ HF 是"HTML → MP4"的合成/渲染层，不是绘制层；本插件是绘制�
 1. **只借规范**：HF 的 `frame.md` 与本仓库 `DESIGN.md` 互读；不装 HF 也能用同一套 token。
 2. **借组件**：`npx hyperframes add <block>` 取现成图表、字幕、转场，不必重画。
 3. **整片合成**：把 `motion_render` 的 clip 放进 HF composition，字幕走 composition 层，最后 `npx hyperframes render`。
+
+> 0.8.0 起，旁白/混音不必进 HF：`scripts/narrate.mjs`（缓存 + 并发 + 词级 timing）与
+> `scripts/mix.mjs`（LUFS/TP + 间隙 dB）可以本地完成；HF 仍负责排版、字幕和最终编码。
 
 ```bash
 npx hyperframes init my-video
@@ -117,20 +123,29 @@ manimgx inspect scene.py -t 1.2,4.5,end
 - 同时报 layout 问题：压字、出画、字号过小、线/填充盖字；
 - 有 layout 问题时退出码为 1，但报告仍然完整。
 
-本仓库把它包成 `motion_frames`，返回结构化 JSON（`storyboard` 路径、`layoutProblems`、`durationSec`、`wallSec`），模型可以直接读图。实测 4 帧约 3–5 秒；同一支 10 秒 / 60fps 场景渲染约 6 秒。渲染成本随**时长**线性增长，看帧成本只跟**采样数**有关，长片差距才明显（对比 HF 合成则是分钟级）。
+本仓库把它包成 `motion_frames`，返回结构化 JSON（`storyboard` 路径、
+`layoutProblems` + `layoutIssues[{index,message}]`、`durationSec`、`wallSec`），
+并写一条 frames 账本。模型可以直接读图，并用 `layoutIssues[].index` 定位到第几格。
+实测 4 帧约 3–5 秒；同一支 10 秒 / 60fps 场景渲染约 6 秒。渲染成本随**时长**线性增长，
+看帧成本只跟**采样数**有关，长片差距才明显（对比 HF 合成则是分钟级）。
 
 ### 4.2 推荐循环
 
 ```
-DESIGN.md
-  → motion_frames（3–6 帧：开场 / 转折 / 结论）
-  → 改场景 → 再出帧（秒级）
-  → 确认门：脚本 → 分镜 → DESIGN/风格帧 → 用户明确“开始”
+scaffold → motion.project.json + DESIGN.md + timeline.json
   → formula_check
-  → motion_render（定稿后）
-  → 需要字幕/旁白/混音：进 HF
+  → motion_frames（3–6 帧：开场 / 转折 / 结论）
+  → 改场景 / 改 cue → 再出帧（秒级）
+  → 确认门：脚本 → 分镜 → DESIGN/风格帧 → 用户明确“开始”
+  → timeline-check（cue 与旁白对齐）
+  → motion_render（定稿后；ensureCfr）
+  → 需要旁白/字幕：narrate（缓存+并发）→ mix（间隙/LUFS）
+  → assemble（raw VFR → CFR）或 HF composition
   → motion_probe / hyperframes check（只对成片）
+  → run-report（active / wall / cacheHits）
 ```
+
+开工前先 `motion_doctor`；`ready.math=false` 时用 `motion_setup`，不要用 bash 建 venv。
 
 ### 4.3 为什么快
 
@@ -145,7 +160,7 @@ DESIGN.md
 ### 4.4 建议的默认
 
 - 默认工具链：`motion_frames`（不装 HF 也能跑）；
-- 默认检查：看 storyboard PNG + `layoutProblems`，不看 `blankFrames`（还没有视频）；
+- 默认检查：看 storyboard PNG + `layoutProblems` / `layoutIssues`，不看 `blankFrames`（还没有视频）；
 - 默认不生成：mp4、HF 工程、视频抽帧 contact sheet；
 - 需要交付时才升级到 `motion_render` / HF；
 - 成片检查（`motion_probe`）只在已经有 mp4 时运行，不做"为了检查而渲染"。
@@ -164,7 +179,7 @@ DESIGN.md
 | 独立 rubric 评审代替反复肉眼 | mg-styles-15 的 7 维 rubric、Lemo 的 review loop | 一轮改到点上 |
 | 确定性 + 缓存 | HF `same input, same frames`；Lemo 无随机/无时钟 | 可回归、可并发 |
 
-本仓库三个 demo 的实测（同一台机器）：
+本仓库 `showcase/` 里五支短片都是标准项目（`motion.project.json`；`final/` 提交成片，`out/` 放生成物）。实测（同一台机器）：
 
 - 出 3 帧：**2.4–4.3 s**；渲染 6–10 秒成片：**2.8–5.0 s**；
 - 关键不是"帧比视频快多少"，而是**看帧成本与片长无关**，且不经过编码、起浏览器、抽帧三次搬运；
@@ -174,10 +189,12 @@ DESIGN.md
 
 服务端插件没有 HMR，但也不需要每次重装：
 
-- `link:` 安装一次即可；改 `lib/ops.js` / `lib/doctor.js` 由 mtime 热加载，下一次工具调用生效；
-- 改 `styles/*`、场景、tokens 本来就不用重启；
-- 只有工具名/描述/参数 schema 变化才 `⌘⇧R`；
-- 可以完全绕开 Harness：`node scripts/dev.mjs frames|render|probe|doctor ...`。
+- `link:` 安装一次即可；改 `lib/ops.js` / `lib/doctor.js` / `lib/setup.js` 由 mtime 热加载；
+- 改 `skills/*` 正文不用重启；增删 skill 或改 `lib/skills.js` 需要 `⌘⇧R`（provider 在 `apply()` 注册）；
+- 改 `lib/metrics.js` 需要重启（被 `ops.js` 静态 import）；`scripts/timeline-check|scaffold|run-report` 是独立进程；
+- 改 `styles/*`、场景、tokens 本来就不用重启；只有工具名/描述/参数 schema 变化才 `⌘⇧R`；
+- 可以完全绕开 Harness：`node scripts/dev.mjs frames|render|probe|doctor|setup ...`；
+  时间轴/脚手架/账本分别用 `scripts/timeline-check.mjs` / `scaffold.mjs` / `run-report.mjs`。
 
 细节见 [dev-loop.md](dev-loop.md)。
 
@@ -215,7 +232,8 @@ node scripts/plan-questions.mjs "<brief>" --json
 ```bash
 node scripts/approvals.mjs init <project> --mode light
 node scripts/approvals.mjs set <project> requirements approved \
-  --duration 15s --aspect 1920x1080 --delivery silent --note "用户确认"
+  --duration 15s --aspect 1920x1080 --delivery silent \
+  --confirmation q_... --note "用户确认"
 node scripts/approvals.mjs set <project> script_storyboard approved --note "用户确认"
 node scripts/approvals.mjs check <project>
 ```

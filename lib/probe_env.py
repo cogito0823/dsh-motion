@@ -2,11 +2,17 @@
 """环境探针：一个进程内回答「字体能不能排、公式能不能转、API 长什么样」。
 
 由 lib/doctor.js 调用（venv 里的 python），不单独给用户跑。
-只构造对象，不渲染、不写盘：约 0.25 s。真正的渲染验证留给项目自己的最小场景。
+只构造对象，不渲染、不写盘：通常 0.3–0.8 s。真正的渲染验证留给项目自己的最小场景。
+
+字体验证为什么要做“负样本”：
+  manimgx 对不存在的字体是静默回退的——Text(font="NoSuchFontXYZ") 仍然
+  返回宽高 > 0。旧探针用 width>0 判断，于是永远通过。现在先量一个故意
+  不存在的家族作为基线；目标家族与基线宽高完全一致，就说明它也回退了。
 
 stdout 必须是单行 JSON。任何未捕获异常都由 JS 侧兜成 "probe failed"。
 """
 
+import inspect
 import json
 import sys
 
@@ -17,13 +23,92 @@ MATH_SAMPLES = [
     ("integral", r"\int_0^1 x^2\,dx"),
 ]
 
-FONT_SAMPLES = [
-    ("PingFang SC", "微分：把曲线拉成直线", "cjk"),
-    ("Helvetica Neue", "ABC 123", "latin"),
+# 常用家族巡检：中文片选字体时真正需要的是“有哪些可用的”，不是只验两个。
+FONT_INVENTORY = [
+    ("PingFang SC", "cjk"),
+    ("PingFang TC", "cjk"),
+    ("Hiragino Sans GB", "cjk"),
+    ("Songti SC", "cjk"),
+    ("Kaiti SC", "cjk"),
+    ("Yuanti SC", "cjk"),
+    ("STHeiti", "cjk"),
+    ("Heiti SC", "cjk"),
+    ("Noto Sans CJK SC", "cjk"),
+    ("Noto Serif CJK SC", "cjk"),
+    ("Source Han Sans SC", "cjk"),
+    ("Microsoft YaHei", "cjk"),
+    ("SimHei", "cjk"),
+    ("Arial Unicode MS", "cjk"),
+    ("Chalkboard SE", "display"),
+    ("Hannotate SC", "display"),
+    ("HanziPen SC", "display"),
+    ("Helvetica Neue", "latin"),
+    ("Noto Sans", "latin"),
 ]
 
+MISSING_FAMILY = "__dsh_motion_missing_family__"
+SAMPLE_TEXT = {
+    "cjk": "微分：把曲线拉成直线 abc 0123",
+    "display": "微分：把曲线拉成直线",
+    "latin": "ABC abc 0123",
+}
+EPSILON = 1e-6
+
 # agent 常为这几个去翻 site-packages 源码；签名直接放进报告。
-API_NAMES = ["MathTex", "Text", "DecimalNumber", "ValueTracker", "Axes"]
+# 完整清单在 skills/animation-router/references/api.md，这里只放高频入口。
+API_CLASSES = [
+    "MathTex",
+    "Text",
+    "Paragraph",
+    "DecimalNumber",
+    "ValueTracker",
+    "Axes",
+    "NumberPlane",
+    "Line",
+    "Arrow",
+    "Circle",
+    "Dot",
+    "Rectangle",
+    "Polygon",
+    "Arc",
+    "ImageMobject",
+    "VGroup",
+]
+
+API_FUNCTIONS = [
+    "Create",
+    "Write",
+    "FadeIn",
+    "FadeOut",
+    "Transform",
+    "ReplacementTransform",
+    "TransformMatchingTex",
+    "Indicate",
+    "MoveAlongPath",
+    "always_redraw",
+]
+
+RATE_NAMES = [
+    "smooth",
+    "linear",
+    "ease_in_sine",
+    "ease_out_sine",
+    "ease_in_out_sine",
+    "ease_in_quad",
+    "ease_out_quad",
+    "ease_in_out_quad",
+    "ease_in_cubic",
+    "ease_out_cubic",
+    "ease_in_out_cubic",
+    "there_and_back",
+    "there_and_back_with_pause",
+    "rush_into",
+    "rush_from",
+    "slow_into",
+    "double_smooth",
+    "running_start",
+    "squish_rate_func",
+]
 
 
 def package_version(name):
@@ -35,18 +120,48 @@ def package_version(name):
         return None
 
 
+def measure(text_cls, family, sample):
+    """构造一次并返回 (width, height)；失败时抛异常。"""
+    obj = text_cls(sample, font=family, font_size=34)
+    return float(obj.width), float(obj.height)
+
+
 def check_fonts(text_cls):
-    rows = []
-    for family, sample, kind in FONT_SAMPLES:
-        row = {"family": family, "kind": kind, "ok": False}
+    """巡检常见家族，用“缺字体基线”识别静默回退。
+
+    返回 rows（每行一个家族）与 resolved 列表。宽高同时与基线一致才算回退；
+    只差一个维度仍视为解析成功，避免把字形差异误判成缺字体。
+    """
+    baselines = {}
+    for kind, sample in SAMPLE_TEXT.items():
         try:
-            obj = text_cls(sample, font=family, font_size=34)
-            row["ok"] = float(obj.width) > 0 and float(obj.height) > 0
-            row["width"] = round(float(obj.width), 2)
+            baselines[kind] = measure(text_cls, MISSING_FAMILY, sample)
+        except Exception as exc:  # noqa: BLE001 - 基线失败就没法判断
+            return [], [], f"字体基线构造失败: {type(exc).__name__}: {exc}"[:200]
+
+    rows = []
+    for family, kind in FONT_INVENTORY:
+        row = {"family": family, "kind": kind, "ok": False, "resolved": False}
+        try:
+            width, height = measure(text_cls, family, SAMPLE_TEXT[kind])
+            base_width, base_height = baselines[kind]
+            resolved = not (
+                abs(width - base_width) <= EPSILON and abs(height - base_height) <= EPSILON
+            )
+            row.update(
+                {
+                    "ok": resolved,
+                    "resolved": resolved,
+                    "width": round(width, 3),
+                    "height": round(height, 3),
+                }
+            )
         except Exception as exc:  # noqa: BLE001 - 报告里要原文
             row["error"] = f"{type(exc).__name__}: {exc}"[:160]
         rows.append(row)
-    return rows
+
+    cjk = [row["family"] for row in rows if row["kind"] == "cjk" and row["resolved"]]
+    return rows, cjk, None
 
 
 def check_formulas(math_tex_cls):
@@ -62,22 +177,29 @@ def check_formulas(math_tex_cls):
     return rows
 
 
-def api_signatures(module):
-    import inspect
+def signature_of(obj):
+    try:
+        target = obj.__init__ if inspect.isclass(obj) else obj
+        sig = str(inspect.signature(target))
+    except (TypeError, ValueError):
+        sig = "(signature unavailable)"
+    # 去掉 self，太长就截断：要的是参数名，不是注解全文。
+    sig = sig.removeprefix("(self, ").removeprefix("(self)")
+    return sig[:320]
 
-    out = {}
-    for name in API_NAMES:
-        cls = getattr(module, name, None)
-        if cls is None:
-            continue
-        try:
-            sig = str(inspect.signature(cls.__init__))
-        except (TypeError, ValueError):
-            sig = "(signature unavailable)"
-        # 去掉 self，太长就截断：要的是参数名，不是注解全文。
-        sig = sig.removeprefix("(self, ").removeprefix("(self)")
-        out[name] = sig[:320]
-    return out
+
+def api_signatures(module):
+    classes = {}
+    functions = {}
+    for name in API_CLASSES:
+        obj = getattr(module, name, None)
+        if obj is not None:
+            classes[name] = signature_of(obj)
+    for name in API_FUNCTIONS:
+        obj = getattr(module, name, None)
+        if callable(obj):
+            functions[name] = signature_of(obj)
+    return classes, functions
 
 
 def main():
@@ -85,7 +207,7 @@ def main():
 
     try:
         import manimgx as motion
-        from manimgx import Axes, DecimalNumber, MathTex, Text, ValueTracker  # noqa: F401
+        from manimgx import MathTex, Text  # noqa: F401
     except Exception as exc:  # noqa: BLE001
         out["ok"] = False
         out["errors"].append(f"import manimgx: {type(exc).__name__}: {exc}"[:300])
@@ -94,14 +216,26 @@ def main():
 
     out["manimgx"] = package_version("manimgx")
     out["sympy"] = package_version("sympy")
-    out["fonts"] = check_fonts(Text)
-    out["formulas"] = check_formulas(MathTex)
-    out["api"] = api_signatures(motion)
 
-    if not any(row["ok"] for row in out["fonts"]):
+    fonts, cjk_fonts, font_error = check_fonts(Text)
+    out["fonts"] = fonts
+    out["cjkFonts"] = cjk_fonts
+    out["fontsOk"] = bool(cjk_fonts)
+    if font_error:
+        out["errors"].append(font_error)
+
+    out["formulas"] = check_formulas(MathTex)
+    out["formulasOk"] = bool(out["formulas"]) and all(row["ok"] for row in out["formulas"])
+
+    classes, functions = api_signatures(motion)
+    out["api"] = classes
+    out["functions"] = functions
+    out["rates"] = [name for name in RATE_NAMES if callable(getattr(motion, name, None))]
+
+    if not out["fontsOk"]:
         out["ok"] = False
-        out["errors"].append("字体全部构造失败：检查 manimgx-fonts 与系统字体")
-    if not all(row["ok"] for row in out["formulas"]):
+        out["errors"].append("没有任何中文字体通过“缺字体基线”校验")
+    if not out["formulasOk"]:
         out["ok"] = False
 
     print(json.dumps(out, ensure_ascii=False))

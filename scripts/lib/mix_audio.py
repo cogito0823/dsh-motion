@@ -51,6 +51,45 @@ def rms(x: np.ndarray) -> float:
     return float(np.sqrt(np.mean(np.square(x)))) if x.size else 0.0
 
 
+def db(x: np.ndarray) -> float:
+    value = rms(x)
+    return round(20.0 * math.log10(max(value, 1e-9)), 1)
+
+
+def gap_report(mix: np.ndarray, voice: np.ndarray, lines: list[dict], duration: float, min_gap: float = 0.15) -> list[dict]:
+    """旁白间隙的 mix/voice 电平；用于判断音乐床是否“掉空”。"""
+    speech = sorted(
+        (max(0.0, float(line["start"])), min(duration, float(line.get("end") or line.get("audioEnd") or line["start"])))
+        for line in lines
+    )
+    spans: list[tuple[float, float, str]] = []
+    cursor = 0.0
+    for index, (start, end) in enumerate(speech):
+        if start - cursor >= min_gap:
+            spans.append((cursor, start, "lead" if index == 0 else "between"))
+        cursor = max(cursor, end)
+    if duration - cursor >= min_gap:
+        spans.append((cursor, duration, "tail"))
+
+    gaps = []
+    for start, end, kind in spans[:50]:
+        a = int(round(start * SR))
+        b = int(round(end * SR))
+        if b <= a:
+            continue
+        segment = mix[a:b]
+        voice_segment = voice[a:b]
+        gaps.append({
+            "kind": kind,
+            "from": round(start, 3),
+            "to": round(end, 3),
+            "duration": round(end - start, 3),
+            "mixDb": db(segment),
+            "voiceDb": db(voice_segment),
+        })
+    return gaps
+
+
 def fir_lowpass(x: np.ndarray, cutoff: float, taps: int = 129) -> np.ndarray:
     n = np.arange(taps) - (taps - 1) / 2
     kernel = np.sinc(2.0 * cutoff / SR * n) * np.hamming(taps)
@@ -90,6 +129,7 @@ def main() -> None:
     parser.add_argument("--duck", type=float, default=0.35, help="人声期间中高频压低比例，0–0.8")
     parser.add_argument("--music-db", type=float, default=-18.0, help="音乐 RMS 相对人声 RMS 的 dB")
     parser.add_argument("--duration", type=float, default=0.0)
+    parser.add_argument("--gap-min-db", type=float, default=-40.0, help="音乐有铺底时，间隙低于该 dB 告警")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
 
@@ -165,6 +205,16 @@ def main() -> None:
     out = Path(args.out).resolve()
     write_wav24(out, mix)
 
+    gaps = gap_report(mix, voice, lines, duration)
+    gap_warnings = []
+    if args.music:
+        for gap in gaps:
+            if gap["mixDb"] < args.gap_min_db:
+                gap_warnings.append(
+                    f"间隙 {gap['from']:.2f}–{gap['to']:.2f}s 只有 {gap['mixDb']} dB，"
+                    f"低于 {args.gap_min_db} dB；音乐床可能听感掉空"
+                )
+
     summary = {
         "ok": True,
         "duration": duration,
@@ -172,6 +222,8 @@ def main() -> None:
         "voiceRms": round(rms(voice), 6),
         "musicRms": round(music_rms, 6),
         "duck": args.duck,
+        "gaps": gaps,
+        "gapWarnings": gap_warnings,
         "warnings": warnings,
         "out": str(out),
     }
