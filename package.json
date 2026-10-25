@@ -37,9 +37,10 @@
   },
   "scripts": {
     "check": "node --check lib/index.js && node --check lib/ops.js && node --check lib/env.js && node --check lib/doctor.js",
+    "test": "node scripts/test-ops.mjs",
     "smoke": "node scripts/smoke.mjs",
     "check:meta": "node scripts/check-meta.mjs",
-    "prepack": "npm run check && npm run smoke"
+    "prepack": "npm run check && npm test && npm run smoke"
   },
   "repository": {
     "type": "git",
