@@ -26,6 +26,7 @@ import {
   parseFrameRate,
   parseInspectOutput,
   parseSignalStats,
+  scanWidthOf,
   summarizeRender,
   tileGrid,
   videoInfoFromProbe,
@@ -351,6 +352,28 @@ test('videoInfoFromProbe 认 VFR raw（621 帧 / 30.033s / 20.68fps）', () => {
   assert.equal(info.frameDelta, -280)
   assert.equal(info.vfr, true)
   assert.equal(info.cfr, false)
+})
+
+test('videoInfoFromProbe 只给 header 的 nb_frames（不再 -count_frames）', () => {
+  const info = videoInfoFromProbe({
+    streams: [{ width: 1920, height: 1080, r_frame_rate: '30/1', avg_frame_rate: '30/1', nb_frames: '18001' }],
+    format: { duration: '600.033' },
+  })
+  assert.equal(info.frames, 18001)
+  assert.equal(info.expectedFrames, 18001)
+  assert.equal(info.frameDelta, 0)
+  assert.equal(info.vfr, false)
+  assert.equal(info.cfr, true)
+})
+
+// —— 空镜扫描宽度：默认 480p；源不宽于 480 不上采样；full 保持原始分辨率 ——
+test('scanWidthOf：默认 480p、窄片不放大、full 退回原始分辨率', () => {
+  assert.equal(scanWidthOf(1920), 480)
+  assert.equal(scanWidthOf(1080), 480)
+  assert.equal(scanWidthOf(360), null)
+  assert.equal(scanWidthOf(1920, true), null)
+  assert.equal(scanWidthOf(undefined), null)
+  assert.equal(scanWidthOf('1920'), 480)
 })
 
 // —— importFresh：改文件后按 mtime 重新 import（热加载的基础） ——

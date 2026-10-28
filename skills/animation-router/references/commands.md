@@ -83,7 +83,8 @@ node scripts/approvals.mjs check <project>
 # 命令行（Harness 内用 motion_frames / motion_render 工具）
 node scripts/dev.mjs frames <scene.py> 0.5,2.0,end
 node scripts/dev.mjs render <scene.py> --fps 30 --out out/clip.mp4
-node scripts/dev.mjs probe <video.mp4>
+node scripts/dev.mjs probe <video.mp4>          # 逐帧扫全片，默认 480p 下采样，判据不变
+node scripts/dev.mjs probe <video.mp4> --full   # 同上但原始分辨率（怀疑细线被平均掉时）
 ```
 
 ## 3. 旁白与混音

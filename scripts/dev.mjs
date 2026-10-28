@@ -4,7 +4,7 @@
  *
  *   node scripts/dev.mjs frames <scene.py> [t1,t2,...]
  *   node scripts/dev.mjs render <scene.py> [--fps 30] [--out path] [--explore]
- *   node scripts/dev.mjs probe <video.mp4>
+ *   node scripts/dev.mjs probe <video.mp4> [--full]
  *   node scripts/dev.mjs doctor [--force]
  *   node scripts/dev.mjs setup [--force] [--tts]
  */
@@ -27,7 +27,7 @@ function elapsed(start) {
   return `${((Date.now() - start) / 1000).toFixed(1)}s`
 }
 
-if (!cmd) fail('用法: node scripts/dev.mjs frames|render|probe|doctor|setup ...\nrender --explore 仅用于临时场景，不进入交付。')
+if (!cmd) fail('用法: node scripts/dev.mjs frames|render|probe|doctor|setup ...\nrender --explore 仅用于临时场景，不进入交付。\nprobe --full 用原始分辨率重扫（默认 480p 下采样，逐帧不抽样）。')
 
 function outputDir(file, kind) {
   let project = { root: null }
@@ -66,7 +66,8 @@ if (cmd === 'frames') {
 } else if (cmd === 'probe') {
   if (!file) fail('缺少视频文件')
   const started = Date.now()
-  console.log(JSON.stringify({ ...(await probeVideo({}, { video: file })), elapsed: elapsed(started) }, null, 2))
+  const result = await probeVideo({}, { video: file, full: rest.includes('--full') })
+  console.log(JSON.stringify({ ...result, elapsed: elapsed(started) }, null, 2))
 } else if (cmd === 'setup') {
   const started = Date.now()
   const result = await ensureVenv({}, {

@@ -16,7 +16,7 @@
 | `motion_doctor` | **环境预检（一次调用）**：运行时 + 真实可用字体清单 + 公式转换 + API/函数/rate；按指纹缓存 12 h（不再按 Node 版本分叉） |
 | `motion_setup` | **环境自愈**：建 venv、装 manimgx/sympy（`tts=true` 加 edge-tts）；在宿主进程执行，不受模型 bash 沙箱限制 |
 | `motion_render` | 渲染 Manim / manimgx 场景；必须有 `motion.project.json`，`APPROVALS.json` 是前置账本（已通过就直接渲，未通过才走一次平台审批）；输出落 `<project>/out/render` |
-| `motion_probe` | 成片抽帧拼 contact sheet，报告全黑/过曝，并给出 fps/帧数/VFR/CFR |
+| `motion_probe` | 成片自检：逐帧扫描全片（默认下采样到 480p，判据不变、不抽样）报告全黑/过曝，拼 contact sheet，并给出 fps/帧数/VFR/CFR |
 | `formula_check` | 用 SymPy 判断两个表达式是否恒等 |
 
 外加三个技能：`animation-router`（题材路由 + API/命令速查）、`design-spec`（写 DESIGN.md）、`qa-rubric`（交付自检）。
