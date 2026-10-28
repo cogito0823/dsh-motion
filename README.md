@@ -32,6 +32,7 @@ npm 页面只渲染 README，不提供每个版本的 release note；完整记�
 
 | 版本 | 日期 | 主要内容 |
 |---|---|---|
+| [0.10.3](https://github.com/cogito0823/dsh-motion/releases/tag/v0.10.3) | 2026-10-29 | 性能：`motion_probe` 帧数改读容器头、空镜扫描改 480p 下采样（逐帧不抽样），600 s 片 112 s → 12 s；新增 `scanWidth` 与 `--full` |
 | [0.10.2](https://github.com/cogito0823/dsh-motion/releases/tag/v0.10.2) | 2026-10-26 | 修复：会话工作目录改走 `workingDirectory.ensure` / `session.header.cwd`，取不到就报错；报错不再暗示“把项目搬到某处” |
 
 | [0.10.1](https://github.com/cogito0823/dsh-motion/releases/tag/v0.10.1) | 2026-10-26 | 修复：项目集按 `exec.agent.session.cwd` 定位，不再误用插件进程 cwd（`~/.dsh/profiles/<p>`）；metrics 也走同一坐标系 |
